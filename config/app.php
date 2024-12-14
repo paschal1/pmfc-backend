@@ -123,4 +123,47 @@ return [
         'store' => env('APP_MAINTENANCE_STORE', 'database'),
     ],
 
+     /*
+    |---------------------------------------------------------------------------
+    | Application Service Providers
+    |---------------------------------------------------------------------------
+    |
+    | The service providers listed here will be automatically loaded on the
+    | request to your application. You can add your own service providers to
+    | this array to extend the functionality of your application.
+    |
+    | Intervention Image Service Provider for image manipulation
+    |
+    */
+
+    // 'providers' => [
+    //     // Other service providers...
+
+    //     // Intervention Image Service Provider
+    //     Intervention\Image\ImageServiceProvider::class,
+    // ],
+
+    /*
+    |---------------------------------------------------------------------------
+    | Application Facades Aliases
+    |---------------------------------------------------------------------------
+    |
+    | This array of class aliases will be registered when the application is
+    | started. You can add your own aliases to this array to provide "short
+    | names" to your classes.
+    |
+    | Intervention Image Facade Alias
+    |
+    */
+
+    // 'aliases' => [
+    //     // Other aliases...
+
+    //     // Intervention Image Facade Alias
+    //     'Image' => Intervention\Image\Facades\Image::class,
+    // ],
+
 ];
+    
+
+
