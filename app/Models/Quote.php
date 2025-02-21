@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 
 class Quote extends Model
 {
@@ -17,8 +18,9 @@ class Quote extends Model
     ];
 
     // Relationship with Service
-    public function service()
-    {
-        return $this->belongsTo(Service::class);
-    }
+    public function services()
+{
+    return $this->belongsToMany(Service::class, 'quote_service');
+}
+
 }

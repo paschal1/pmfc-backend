@@ -13,15 +13,17 @@ return new class extends Migration
     {
         Schema::create('quotes', function (Blueprint $table) {
             $table->id();
-            $table->string('name'); // User's name
-            $table->string('email'); // User's email
-            $table->unsignedBigInteger('service_id'); // Service the user is requesting
-            $table->decimal('quoted_price', 10, 2); // Price of the service
-            $table->text('details')->nullable(); // Additional user details
+            $table->string('email')->unique();
+            $table->text('service_ids')->nullable();   
+            $table->text('service_titles')->nullable(); // Comma-separated service titles
+            $table->text('service_prices')->nullable(); // Comma-separated service prices
+            $table->json('details')->nullable();        // JSON of selected services
+            $table->json('quote')->nullable();          // JSON of full quote
+            $table->enum('status', ['pending', 'sent'])->default('pending');
             $table->timestamps();
 
             // Foreign key to services table
-            $table->foreign('service_id')->references('id')->on('services')->onDelete('cascade');
+            //$table->foreign('service_id')->references('id')->on('services')->onDelete('cascade');
         });
     }
 

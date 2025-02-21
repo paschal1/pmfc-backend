@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
+use App\Models\TrainingProgram;
 
 class TrainingController extends Controller
 {
@@ -23,22 +24,43 @@ class TrainingController extends Controller
     public function store(Request $request)
     {
         // Validate request data
-        $validator = Validator::make($request->all(), [
+        $request->validate([
             'title' => 'required|string|max:255',
             'description' => 'required|string',
+            'price' => 'required|string',
             'start_date' => 'required|date',
             'end_date' => 'required|date|after_or_equal:start_date',
         ]);
 
-        if ($validator->fails()) {
-            return response()->json(['errors' => $validator->errors()], 422);
-        }
+        // if ($validator->fails()) {
+        //     return response()->json(['errors' => $validator->errors()], 422);
+        // }
 
         // Create training program
         $trainingProgram = TrainingProgram::create($request->all());
 
         return response()->json(['message' => 'Training program created successfully', 'trainingProgram' => $trainingProgram], 201);
     }
+
+    public function update(Request $request, $id)
+{
+    // Validate request data
+    $request->validate([
+        'title' => 'sometimes|required|string|max:255',
+        'description' => 'sometimes|required|string',
+        'price' => 'sometimes|required|string',
+        'start_date' => 'sometimes|required|date',
+        'end_date' => 'sometimes|required|date|after_or_equal:start_date',
+    ]);
+
+    // Find the training program by ID
+    $trainingProgram = TrainingProgram::findOrFail($id);
+
+    // Update the training program with the validated data
+    $trainingProgram->update($request->all());
+
+    return response()->json(['message' => 'Training program updated successfully', 'trainingProgram' => $trainingProgram], 200);
+}
 
     /**
      * Enroll a student in a training program.

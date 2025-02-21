@@ -63,6 +63,12 @@ public function activityLogs()
     return $this->hasMany(UserActivityLog::class);
 }
 
+
+public function ratings()
+{
+    return $this->hasMany(Rating::class);
+}
+
 public function role()
     {
         return $this->belongsTo(Role::class);
@@ -71,6 +77,11 @@ public function role()
 public function hasPermission($permissionName)
     {
         return $this->role->permissions->contains('name', $permissionName);
+    }
+
+    public function wishlist()
+    {
+        return $this->belongsToMany(Product::class, 'wishlists', 'user_id', 'product_id');
     }
 
 }

@@ -9,7 +9,9 @@ class UserActivityLog extends Model
     protected $fillable = [
         'user_id',
         'activity_type',
-        'created_at',
+        'device_type',
+        'ip_address',
+        'created_at'
     ];
 // Define the relationship to the User model
 public function user()

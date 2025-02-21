@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
+use App\Models\Testimonial;
 
 class TestimonialController extends Controller
 {
@@ -22,8 +23,8 @@ class TestimonialController extends Controller
      */
     public function store(Request $request)
     {
-         // Submit a testimonial
-         $validated = $request->validate([
+        // Validate and submit a testimonial
+        $validated = $request->validate([
             'message' => 'required|string|max:500',
         ]);
 
@@ -32,7 +33,7 @@ class TestimonialController extends Controller
             'message' => $validated['message'],
         ]);
 
-        return response()->json(['message' => 'Testimonial submitted for review']);
+        return response()->json(['message' => 'Testimonial submitted for review'], 201);
     }
 
     /**
@@ -40,7 +41,10 @@ class TestimonialController extends Controller
      */
     public function show(string $id)
     {
-        //
+        // Find a specific testimonial by ID
+        $testimonial = Testimonial::findOrFail($id);
+
+        return response()->json($testimonial);
     }
 
     /**
@@ -48,7 +52,17 @@ class TestimonialController extends Controller
      */
     public function update(Request $request, string $id)
     {
-        //
+        // Validate and update the testimonial
+        $validated = $request->validate([
+           // 'message' => 'required|string|max:500',
+            'is_approved' => 'nullable|boolean',
+        ]);
+
+        $testimonial = Testimonial::findOrFail($id);
+
+        $testimonial->update($validated);
+
+        return response()->json(['message' => 'Testimonial updated successfully']);
     }
 
     /**
@@ -56,6 +70,11 @@ class TestimonialController extends Controller
      */
     public function destroy(string $id)
     {
-        //
+        // Delete a testimonial by ID
+        $testimonial = Testimonial::findOrFail($id);
+
+        $testimonial->delete();
+
+        return response()->json(['message' => 'Testimonial deleted successfully']);
     }
 }

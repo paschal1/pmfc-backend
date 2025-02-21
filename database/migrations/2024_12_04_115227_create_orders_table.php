@@ -16,11 +16,16 @@ return new class extends Migration
             $table->unsignedBigInteger('user_id');
             $table->foreign('user_id')->references('id')->on('users')->onDelete('cascade');
             $table->decimal('total_price', 10, 2);
+            $table->string('fullname')->nullable();
+            $table->string('email')->nullable();
             $table->string('status')->default('pending');
             $table->string('payment_status')->default('Unpaid'); // Unpaid, Paid
             $table->string('transaction_id')->nullable();
             $table->date('order_date');
             $table->text('shipping_address');
+            $table->string('shipping_state')->nullable();
+            $table->string('shipping_city')->nullable();
+            $table->string('shipping_zip_code')->nullable();
             $table->timestamps();
         });
     }

@@ -13,6 +13,8 @@ class Order extends Model
         'user_id',
         'product_id',
         'total_price',
+        'fullname',
+        'email',
         'status',
         'payment_status',
         'transaction_id',
@@ -37,7 +39,7 @@ class Order extends Model
     }
 
 
-    public function items()
+    public function orderItems()
     {
         return $this->hasMany(OrderItem::class);
     }

@@ -3,12 +3,15 @@
 namespace Tests\Unit;
 
 use PHPUnit\Framework\TestCase;
+use Illuminate\Foundation\Testing\RefreshDatabase;
 
 class ProductTest extends TestCase
 {
     /**
      * A basic unit test example.
      */
+    use RefreshDatabase;
+
     public function it_can_create_a_product()
     {
         $productData = [

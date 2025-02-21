@@ -6,104 +6,69 @@ use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use App\Models\TrainingProgram;
 use App\Models\Enrollment;
+use App\Models\Student;
 
 class EnrollmentController extends Controller
 {
     /**
-     * Display a listing of the resource.
+     * Enroll a student in a training program.
+     */
+    public function enroll(Request $request)
+    {
+        $request->validate([
+            'student_id' => 'required|exists:students,id',
+            'training_program_id' => 'required|exists:training_programs,id',
+            'enrollment_date' => 'required|date',
+        ]);
+
+        // Check if the student is already enrolled in the training program
+        $existingEnrollment = Enrollment::where('student_id', $request->student_id)
+            ->where('training_program_id', $request->training_program_id)
+            ->first();
+
+        if ($existingEnrollment) {
+            return response()->json(['message' => 'Student is already enrolled in this program.'], 409);
+        }
+
+        // Create the enrollment
+        $enrollment = Enrollment::create([
+            'student_id' => $request->student_id,
+            'training_program_id' => $request->training_program_id,
+            'enrollment_date' => $request->enrollment_date,
+        ]);
+
+        return response()->json(['message' => 'Enrollment successful.', 'enrollment' => $enrollment], 201);
+    }
+
+    /**
+     * List all enrollments.
      */
     public function index()
     {
-        $enrollment = Enrollment::all();
+        $enrollments = Enrollment::with('student', 'trainingProgram')->get();
+
+        return response()->json(['enrollments' => $enrollments], 200);
+    }
+
+    /**
+     * Show a specific enrollment.
+     */
+    public function show($id)
+    {
+        $enrollment = Enrollment::with('student', 'trainingProgram')->findOrFail($id);
+
         return response()->json(['enrollment' => $enrollment], 200);
     }
 
     /**
-     * Store a newly created resource in storage.
+     * Delete an enrollment.
      */
-    public function store(Request $request)
+    public function destroy($id)
     {
-        $validator = Validator::make($request->all(), [
-            'full_name' => 'required|string|max:255',
-            'age' => 'required|integer|min:18',
-            'gender' => 'required|in:Male,Female,Other',
-            'contact_number' => 'required|string|max:15',
-            'email' => 'required|email|unique:enrollment,email',
-            'address' => 'required|string|max:255',
-            'date_of_birth' => 'required|date',
-            'emergency_contact' => 'required|string|max:15',
-            'previous_experience' => 'nullable|string',
-            'joining_date' => 'required|date',
-            'current_skill_level' => 'required|in:Beginner,Intermediate,Advanced',
-            'goals' => 'nullable|string',
-            'id_proof' => 'nullable|file|mimes:jpg,jpeg,png,pdf|max:2048',
-            'resume' => 'nullable|file|mimes:pdf,doc,docx|max:2048',
-        ]);
+        $enrollment = Enrollment::findOrFail($id);
+        $enrollment->delete();
 
-        if ($validator->fails()) {
-            return response()->json(['errors' => $validator->errors()], 422);
-        }
-
-        $idProofPath = $request->file('id_proof') ? $request->file('id_proof')->store('uploads/id_proofs') : null;
-        $resumePath = $request->file('resume') ? $request->file('resume')->store('uploads/resumes') : null;
-
-        $Enrollment = Enrollment::create([
-            'full_name' => $request->input('full_name'),
-            'age' => $request->input('age'),
-            'gender' => $request->input('gender'),
-            'contact_number' => $request->input('contact_number'),
-            'email' => $request->input('email'),
-            'address' => $request->input('address'),
-            'date_of_birth' => $request->input('date_of_birth'),
-            'emergency_contact' => $request->input('emergency_contact'),
-            'previous_experience' => $request->input('previous_experience'),
-            'joining_date' => $request->input('joining_date'),
-            'program_duration' => '1 year',
-            'current_skill_level' => $request->input('current_skill_level'),
-            'goals' => $request->input('goals'),
-            'id_proof' => $idProofPath,
-            'resume' => $resumePath,
-        ]);
-
-        return response()->json(['message' => 'Enrollment created successfully', 'Enrollment' => $Enrollment], 201);
-    }
-
-    /**
-     * Display the specified resource.
-     */
-    public function show(string $id)
-    {
-        $Enrollment = Enrollment::find($id);
-
-        if (!$Enrollment) {
-            return response()->json(['message' => 'Enrollment not found'], 404);
-        }
-
-        return response()->json(['Enrollment' => $Enrollment], 200);
-    }
-
-    /**
-     * Update the specified resource in storage.
-     */
-    public function update(Request $request, string $id)
-    {
-        //
-    }
-
-    /**
-     * Remove the specified resource from storage.
-     */
-    public function destroy(string $id)
-    {
-        $Enrollment = Enrollment::find($id);
-
-        if (!$Enrollment) {
-            return response()->json(['message' => 'Enrollment not found'], 404);
-        }
-
-        $Enrollment->delete();
-
-        return response()->json(['message' => 'Enrollment deleted successfully'], 200);
+        return response()->json(['message' => 'Enrollment deleted successfully.'], 200);
     }
 }
 

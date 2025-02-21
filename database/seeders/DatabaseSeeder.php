@@ -4,6 +4,7 @@ namespace Database\Seeders;
 
 use App\Models\User;
 use App\Models\Role;
+use App\Models\Service; 
 use App\Models\Permission;
 // use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
@@ -46,9 +47,10 @@ class DatabaseSeeder extends Seeder
     $trainerRole->permissions()->sync(Permission::where('name', 'manage_training_programs')->pluck('id'));
     $customerRole->permissions()->sync(Permission::where('name', 'view_products')->pluck('id'));
 
-    Service::create(['name' => 'Furniture Design', 'price' => 1000]);
-    Service::create(['name' => 'Carpentry', 'price' => 800]);
-    Service::create(['name' => 'Woodworking', 'price' => 600]);
+    Service::create(['title' => 'Furniture Design', 'price' => 1000, 'description' => 'Custom furniture design tailored to your needs.']);
+    Service::create(['title' => 'Carpentry', 'price' => 800, 'description' => 'Professional carpentry services for your home and office.']);
+    Service::create(['title' => 'Woodworking', 'price' => 600, 'description' => 'Expert woodworking services for unique wooden crafts.']);
+    
 
         $this->call([
             CategoriesTableSeeder::class,

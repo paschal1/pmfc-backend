@@ -11,13 +11,21 @@ class Wishlist extends Model
         'product_id',
     ];
 
+ /**
+     * Define the relationship to the User model.
+     */
     public function user()
     {
         return $this->belongsTo(User::class);
     }
 
+    /**
+     * Define the relationship to the Product model.
+     */
     public function product()
     {
-        return $this->belongsTo(Product::class);
+        return $this->belongsTo(Product::class, 'product_id', 'id');
     }
+
+    
 }

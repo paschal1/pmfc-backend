@@ -67,21 +67,28 @@
 <body>
     <div class="email-container">
         <div class="header">
-            <img src="{{ asset('images/pmfc-logo.png') }}" alt="PMFC Logo">
-            <h1>PMFC Quotation</h1>
+            <img src="{{ asset('images/PMFC LTD-logo.png') }}" alt="PMFC LTD Logo">
+            <h1>PMFC LTD Quotation</h1>
         </div>
         <div class="content">
-            <h2>Hello {{ $quote->name }},</h2>
+            <h2>Hello {{ optional($quote)->email ?? 'Customer' }},</h2>
             <p>Thank you for reaching out to us. Here are the details of your quotation:</p>
             <div class="quote-details">
-                <strong>Service:</strong> {{ $quote->service->name }}<br>
-                <strong>Price:</strong> ${{ $quote->quoted_price }}<br>
-                <strong>Details:</strong> {{ $quote->details }}
+                @if ($quote && $quote->details)
+                    @foreach (json_decode($quote->details, true) as $detail)
+                        <strong>Service:</strong> {{ $detail['title'] }}<br>
+                        <strong>Price:</strong> N{{ number_format($detail['price'], 2) }}<br>
+                        <br>
+                    @endforeach
+                    <strong>Total:</strong> N{{ number_format(json_decode($quote->quote, true)['total'] ?? 0, 2) }}
+                @else
+                    <p>No details available for this quotation.</p>
+                @endif
             </div>
             <p>We look forward to serving you. Please feel free to contact us for more information.</p>
         </div>
         <div class="footer">
-            &copy; {{ date('Y') }} PMFC. All Rights Reserved. | <a href="{{ url('pmfc.com') }}">Visit Our Website</a>
+            &copy; {{ date('Y') }} PMFC LTD. All Rights Reserved. | <a href="{{ url('PMFC LTD.com') }}">Visit Our Website</a>
         </div>
     </div>
 </body>

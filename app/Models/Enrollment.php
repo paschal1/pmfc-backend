@@ -3,24 +3,25 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 
 class Enrollment extends Model
 {
+    use HasFactory;
+
     protected $fillable = [
-        'full_name',
-        'age',
-        'gender',
-        'contact_number',
-        'email',
-        'address',
-        'date_of_birth',
-        'emergency_contact',
-        'previous_experience',
-        'joining_date',
-        'program_duration',
-        'current_skill_level',
-        'goals',
-        'id_proof',
-        'resume',
+        'student_id',
+        'training_program_id',
+        'enrollment_date',
     ];
+
+    public function student()
+    {
+        return $this->belongsTo(Student::class);
+    }
+
+    public function trainingProgram()
+    {
+        return $this->belongsTo(TrainingProgram::class);
+    }
 }

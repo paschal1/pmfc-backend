@@ -16,9 +16,11 @@ class QuotationMail extends Mailable
     /**
      * Create a new message instance.
      */
-    public function __construct()
+    public $quote; 
+
+    public function __construct($quote)
     {
-        //
+        $this->quote = $quote;
     }
 
     /**
@@ -27,7 +29,7 @@ class QuotationMail extends Mailable
     public function envelope(): Envelope
     {
         return new Envelope(
-            subject: 'Quotation Mail',
+            subject: 'Here is your Quotation From PMFC.',
         );
     }
 
@@ -36,8 +38,14 @@ class QuotationMail extends Mailable
      */
     public function content(): Content
     {
+        $quoteData = json_decode($this->quote->quote, true); // Decode the quote field
+
         return new Content(
-            view: 'view.emails.quote',
+            view: 'emails.quote',
+            with: [
+              'quote' => $this->quote, // Pass the quote variable correctly
+              'total' => $quoteData['total'] ?? 0, // Pass the total to the view
+            ],
         );
     }
 

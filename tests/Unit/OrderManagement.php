@@ -3,9 +3,11 @@
 namespace Tests\Unit;
 use App\Models\Order;
 use PHPUnit\Framework\TestCase;
+use Illuminate\Foundation\Testing\RefreshDatabase;
 
 class OrderManagement extends TestCase
 {
+    use RefreshDatabase;
     /**
      * A basic unit test example.
      */

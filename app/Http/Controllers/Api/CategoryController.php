@@ -3,9 +3,10 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use Illuminate\Support\Str;
 use Illuminate\Http\Request;
-use App\Model\Category;
-use App\Model\Product;
+use App\Models\Category;
+use App\Models\Product;
 
 class CategoryController extends Controller
 {
@@ -47,19 +48,32 @@ class CategoryController extends Controller
     /**
      * Update the specified resource in storage.
      */
-    public function update(Request $request, Category $category)
+    public function update(Request $request, string $id)
     {
-        $validatedData = $request->validate([
-            'name' => 'required|string|max:255|unique:categories,name,' . $category->id,
-        ]);
+       
+        try {
+            $category = Category::findOrFail($id);
+    
+            $request->validate([
+                'name' => 'required|string|max:255|unique:categories,name',
+            ]);
+    
+
 
         $category->update([
-            'name' => $validatedData['name'],
-            'slug' => Str::slug($validatedData['name']),
+            'name' => $request->input('name'),
+
         ]);
 
         return response()->json(['message' => 'Category updated successfully', 'category' => $category], 200);
+    } catch (\Exception $e) {
+        return response()->json([
+            'status' => false,
+            'message' => 'An error occurred while updating the Category.',
+            'error' => $e->getMessage(),
+        ], 500);
     }
+ }
 
     /**
      * Remove the specified resource from storage.

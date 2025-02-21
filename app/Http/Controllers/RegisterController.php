@@ -4,6 +4,9 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use App\Models\User;
+use App\Mail\WelcomeMail;
+use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Facades\URL;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Validator;
 
@@ -89,6 +92,9 @@ class RegisterController extends Controller
         
          // Log the user in
          auth()->login($user);
+
+          // Send confirmation email to the user
+        Mail::to($request->email)->send(new WelcomeMail($user));
 
         return response()->json([
             'message' => 'User registered successfully',

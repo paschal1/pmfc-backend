@@ -11,7 +11,8 @@ class AnalyticsDashboardFeatureTest extends TestCase
     /**
      * A basic feature test example.
      */
-   
+    use RefreshDatabase;
+
     public function test_can_view_sales_reports()
     {
         $response = $this->get('/api/analytics/sales-reports');

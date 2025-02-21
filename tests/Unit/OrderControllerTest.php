@@ -3,6 +3,7 @@
 namespace Tests\Unit;
 use App\Models\Order;
 use App\Models\User;
+use Illuminate\Foundation\Testing\RefreshDatabase;
 
 use PHPUnit\Framework\TestCase;
 

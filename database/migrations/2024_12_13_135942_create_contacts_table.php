@@ -16,6 +16,7 @@ return new class extends Migration
             $table->string('name');
             $table->string('email');
             $table->text('message');
+            $table->string('phone');
             $table->enum('status', ['pending', 'reviewed'])->default('pending');
             $table->timestamps();
         });

@@ -6,6 +6,7 @@ namespace App\Http\Controllers\Api;
 
 use App\Models\Otp;
 use App\Models\User;
+use App\Models\Cart;
 use App\Utility\Strings;
 use App\Utility\UserActivityService;
 use App\Notifications\SendOtp;
@@ -41,40 +42,67 @@ class AuthController extends Controller
             return response()->json($response, 200);
         }
                 //
-        public function login(Request $request)
-        {
-            $request->validate([
-                'email' => 'required|string|email',
-                'password' => 'required',
-                'remember_me' => 'boolean'
-            ]);
-    
-            if (Auth::attempt(['email' => $request->email, 'password' => $request->password], $request->remember)) {
-                $user = User::find(Auth::user()->id);
-                if (isset($request->device_token)) {
-                    $user->device_token = $request->device_token;
+                public function login(Request $request)
+                {
+                    // Validate the login request
+                    $request->validate([
+                        'email' => 'required|string|email',
+                        'password' => 'required',
+                        'remember_me' => 'boolean',
+                    ]);
+                
+                    // Attempt to authenticate the user
+                    if (Auth::attempt(['email' => $request->email, 'password' => $request->password], $request->remember_me)) {
+                        $user = Auth::user(); // Get the authenticated user
+                
+                        // Update device information if provided
+                        if (isset($request->device_token)) {
+                            $user->device_token = $request->device_token;
+                        }
+                        if (isset($request->device_platform)) {
+                            $user->device_platform = $request->device_platform;
+                        }
+                
+                        // Update last login timestamp
+                        $user->update(['last_login_at' => now()]);
+                
+                        // Log the user activity
+                        UserActivityService::log(
+                            $user->id,
+                            'login',
+                            $request->header('User-Agent'),
+                            $request->ip()
+                        );
+                
+                        // Generate an API token for the user
+                        $bearerToken = $this->getApiToken($user);
+                
+                        // Check if the user already has an active cart
+                        $cart = Cart::where('user_id', $user->id)->where('status', 'active')->first();
+                
+                        if (!$cart) {
+                            // Create a new cart if none exists
+                            $cart = Cart::create([
+                                'user_id' => $user->id,
+                                'status' => 'active',
+                            ]);
+                        }
+                
+                        // Return the response with user, token, and cart details
+                        return response()->json([
+                            'message' => 'Logged in successfully',
+                            'user' => $user,
+                            'bearer_token' => $bearerToken,
+                            'cart' => $cart,
+                        ], 200);
+                    }
+                
+                    // Return error if authentication fails
+                    return response()->json([
+                        'message' => 'Email or password is incorrect',
+                    ], 422);
                 }
-                if (isset($request->device_platform)) {
-                    $user->device_platform = $request->device_platform;
-                }
-
-                Auth::user()->update(['last_login_at' => now()]);
-
-                UserActivityService::log($user->id, 'login');
-
-                $user->update();
-                $user->api_token = $this->getApiToken($user);
-    
-                return $this->sendResponse(
-                "Logged in successfully",
-                [
-                    'user' => $user,
-                    'bearer_token' => $this->getApiToken($user)
-                ]);
-            } else {
-                return $this->sendError('Email or password is incorrect', [],422);
-            }
-        }
+                
     
         public function getApiToken(User $user)
         {

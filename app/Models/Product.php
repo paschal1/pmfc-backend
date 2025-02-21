@@ -23,4 +23,25 @@ class Product extends Model
     {
         return $this->belongsTo(Category::class);
     }
+
+    public function wishlists()
+    {
+        return $this->hasMany(Wishlist::class);
+    }
+
+     /**
+     * Define the relationship to Order Items.
+     */
+    public function orderItems()
+    {
+        return $this->hasMany(OrderItem::class);
+    }
+
+     /**
+     * Example scope to filter products by availability.
+     */
+    public function scopeAvailable($query)
+    {
+        return $query->where('stock', '>', 0);
+    }
 }

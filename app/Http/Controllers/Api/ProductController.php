@@ -10,6 +10,8 @@ use App\Utility\Methods;
 use App\Utility\ImageProcessor;
 use App\Utility\Strings;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\Validator;
+
 
 
 class ProductController extends Controller

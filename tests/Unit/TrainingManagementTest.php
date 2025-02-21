@@ -5,12 +5,15 @@ namespace Tests\Unit;
 use PHPUnit\Framework\TestCase;
 use App\Models\TrainingProgram;
 use App\Models\Enrollment;
+use Illuminate\Foundation\Testing\RefreshDatabase;
 
 class TrainingManagementTest extends TestCase
 {
     /**
      * A basic unit test example.
      */
+    use RefreshDatabase;
+
     public function test_add_new_training_program()
     {
         $trainingData = [
