@@ -3,7 +3,7 @@ name: Deploy Laravel API
 on:
   push:
     branches:
-      - master  # Change this to your main branch if different
+      - master  # Change this if your default branch is different
 
 jobs:
   deploy:
@@ -11,16 +11,23 @@ jobs:
 
     steps:
       - name: Checkout Code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: Install PHP & Dependencies
         uses: shivammathur/setup-php@v2
         with:
-          php-version: '8.2'  # Change this based on your Laravel version
+          php-version: '8.2'
+          extensions: mbstring, bcmath, intl, pdo, pdo_mysql
           tools: composer
 
       - name: Install Dependencies
-        run: composer install --no-dev --optimize-autoloader
+        run: composer install --prefer-dist --no-dev --optimize-autoloader
+
+      - name: Cache Laravel Configuration
+        run: |
+          php artisan config:cache
+          php artisan route:cache
+          php artisan view:cache
 
       - name: Upload Files to Hostinger
         uses: SamKirkland/FTP-Deploy-Action@v4.3.0
