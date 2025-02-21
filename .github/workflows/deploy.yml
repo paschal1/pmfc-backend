@@ -1,0 +1,35 @@
+name: Deploy Laravel API
+
+on:
+  push:
+    branches:
+      - master  # Change this to your main branch if different
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v3
+
+      - name: Install PHP & Dependencies
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.1'  # Change this based on your Laravel version
+          tools: composer
+
+      - name: Install Dependencies
+        run: composer install --no-dev --optimize-autoloader
+
+      - name: Upload Files to Hostinger
+        uses: SamKirkland/FTP-Deploy-Action@v4.3.0
+        with:
+          server: ${{ secrets.FTP_HOST }}
+          username: ${{ secrets.FTP_USERNAME }}
+          password: ${{ secrets.FTP_PASSWORD }}
+          local-dir: "./"
+          server-dir: "/public_html/api/"
+
+      - name: Run Laravel Migrations
+        run: php artisan migrate --force
