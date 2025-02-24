@@ -21,48 +21,6 @@ jobs:
           tools: composer
 
       - name: Install Dependencies
-        run: composer install --prefer-dist --no-dev --optimize-autoloader
-
-      - name: Cache Laravel Configuration
-        run: |
-          php artisan config:cache
-          php artisan route:cache
-          php artisan view:cache
-
-      - name: Upload Files to Hostinger
-        uses: SamKirkland/FTP-Deploy-Action@v4.3.0
-        with:
-          server: ${{ secrets.FTP_HOST }}
-          username: ${{ secrets.FTP_USERNAME }}
-          password: ${{ secrets.FTP_PASSWORD }}
-          local-dir: "./"
-          server-dir: "/public_html/api/"
-
-      - name: Run Laravel Migrations
-        run: php artisan migrate --force
-name: Deploy Laravel API
-
-on:
-  push:
-    branches:
-      - master  # Change this if your default branch is different
-
-jobs:
-  deploy:
-    runs-on: ubuntu-latest
-
-    steps:
-      - name: Checkout Code
-        uses: actions/checkout@v4
-
-      - name: Install PHP & Dependencies
-        uses: shivammathur/setup-php@v2
-        with:
-          php-version: '8.2'
-          extensions: mbstring, bcmath, intl, pdo, pdo_mysql
-          tools: composer
-
-      - name: Install Dependencies
         run: |
           composer install --prefer-dist --no-dev --optimize-autoloader
           composer dump-autoload
@@ -105,4 +63,5 @@ jobs:
           DB_DATABASE: ${{ secrets.DB_DATABASE }}
           DB_USERNAME: ${{ secrets.DB_USERNAME }}
           DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
-        run: php artisan migrate --force
+        run: |
+          php artisan migrate --force
