@@ -40,3 +40,69 @@ jobs:
 
       - name: Run Laravel Migrations
         run: php artisan migrate --force
+name: Deploy Laravel API
+
+on:
+  push:
+    branches:
+      - master  # Change this if your default branch is different
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Install PHP & Dependencies
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.2'
+          extensions: mbstring, bcmath, intl, pdo, pdo_mysql
+          tools: composer
+
+      - name: Install Dependencies
+        run: |
+          composer install --prefer-dist --no-dev --optimize-autoloader
+          composer dump-autoload
+
+      - name: Set Laravel Permissions
+        run: |
+          chmod -R 775 storage bootstrap/cache
+          chmod -R 775 public
+
+      - name: Cache Laravel Configuration
+        run: |
+          php artisan config:clear
+          php artisan cache:clear
+          php artisan config:cache
+          php artisan route:cache
+          php artisan view:cache
+
+      - name: Upload Files to Hostinger
+        uses: SamKirkland/FTP-Deploy-Action@v4.3.0
+        with:
+          server: ${{ secrets.FTP_HOST }}
+          username: ${{ secrets.FTP_USERNAME }}
+          password: ${{ secrets.FTP_PASSWORD }}
+          local-dir: "./"
+          server-dir: "/public_html/api/"
+          timeout: 600000
+          passive: true
+
+      - name: Set Correct Permissions After Deployment
+        run: |
+          chmod -R 775 storage bootstrap/cache
+          chmod -R 775 public
+
+      - name: Run Laravel Migrations
+        env:
+          APP_KEY: ${{ secrets.APP_KEY }}
+          DB_CONNECTION: mysql
+          DB_HOST: ${{ secrets.DB_HOST }}
+          DB_PORT: ${{ secrets.DB_PORT }}
+          DB_DATABASE: ${{ secrets.DB_DATABASE }}
+          DB_USERNAME: ${{ secrets.DB_USERNAME }}
+          DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
+        run: php artisan migrate --force
