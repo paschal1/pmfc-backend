@@ -3,7 +3,7 @@ name: Deploy Laravel API
 on:
   push:
     branches:
-      - master  # Change this if your default branch is different
+      - master  # Change if your default branch is different
 
 jobs:
   deploy:
@@ -12,6 +12,9 @@ jobs:
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
+
+      - name: Get GitHub Actions IP Address
+        run: curl ifconfig.me
 
       - name: Install PHP & Dependencies
         uses: shivammathur/setup-php@v2
@@ -23,8 +26,9 @@ jobs:
       - name: Install Dependencies
         run: composer install --prefer-dist --no-dev --optimize-autoloader
 
-      - name: Set Environment Variables for MySQL
+      - name: Set Laravel Environment Variables
         run: |
+          echo "APP_KEY=${{ secrets.APP_KEY }}" >> .env
           echo "DB_CONNECTION=mysql" >> .env
           echo "DB_HOST=${{ secrets.DB_HOST }}" >> .env
           echo "DB_PORT=3306" >> .env
@@ -32,10 +36,9 @@ jobs:
           echo "DB_USERNAME=${{ secrets.DB_USERNAME }}" >> .env
           echo "DB_PASSWORD=${{ secrets.DB_PASSWORD }}" >> .env
 
-      - name: Clear & Cache Laravel Config
+      - name: Cache Laravel Configuration
         run: |
           php artisan config:clear
-          php artisan cache:clear
           php artisan config:cache
           php artisan route:cache
           php artisan view:cache
