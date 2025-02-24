@@ -8,13 +8,19 @@ on:
 jobs:
   deploy:
     runs-on: ubuntu-latest
+    timeout-minutes: 30
 
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
 
-      - name: Get GitHub Actions IP Address
-        run: curl ifconfig.me
+      - name: Cache Composer dependencies
+        uses: actions/cache@v3
+        with:
+          path: vendor
+          key: composer-${{ hashFiles('**/composer.lock') }}
+          restore-keys: |
+            composer-
 
       - name: Install PHP & Dependencies
         uses: shivammathur/setup-php@v2
@@ -24,7 +30,7 @@ jobs:
           tools: composer
 
       - name: Install Dependencies
-        run: composer install --prefer-dist --no-dev --optimize-autoloader
+        run: composer install --no-dev --prefer-dist --no-progress --no-interaction --optimize-autoloader
 
       - name: Set Laravel Environment Variables
         run: |
