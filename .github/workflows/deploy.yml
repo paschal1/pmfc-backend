@@ -46,7 +46,7 @@ jobs:
           HOSTINGER_IP: ${{ secrets.HOSTINGER_IP }}
         run: |
           ssh -p "$SSH_PORT" "$SSH_USER@$HOSTINGER_IP" << 'EOF'
-            cd public_html/api
+            cd public_html
             
             echo "🔄 Resetting Git Repository"
             git reset --hard
