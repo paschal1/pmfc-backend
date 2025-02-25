@@ -128,3 +128,5 @@ Route::middleware('auth:sanctum')->group(function () {
 Route::get('/payment/callback', [PaymentController::class, 'handleGatewayCallback'])->name('payment.callback');
 
 });
+
+//SHA256:nW1Z+0L8wk6b6iM7zZC2Xatdj5YGngbMIrlbukzn3iY ssh -p 65002 u268258642@46.17.175.156

@@ -1,62 +1,42 @@
-name: Deploy Laravel API
+name: Deploy Laravel to Hostinger via SSH
 
 on:
   push:
     branches:
-      - master  # Change if your default branch is different
+      - main
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
-    timeout-minutes: 30
 
     steps:
-      - name: Checkout Code
-        uses: actions/checkout@v4
+      - name: Checkout Repository
+        uses: actions/checkout@v3
 
-      - name: Cache Composer dependencies
-        uses: actions/cache@v3
-        with:
-          path: vendor
-          key: composer-${{ hashFiles('**/composer.lock') }}
-          restore-keys: |
-            composer-
-
-      - name: Install PHP & Dependencies
-        uses: shivammathur/setup-php@v2
-        with:
-          php-version: '8.2'
-          extensions: mbstring, bcmath, intl, pdo, pdo_mysql
-          tools: composer
-
-      - name: Install Dependencies
-        run: composer install --no-dev --prefer-dist --no-progress --no-interaction --optimize-autoloader
-
-      - name: Set Laravel Environment Variables
+      - name: Setup SSH
+        env:
+          SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
+          HOSTINGER_IP: ${{ secrets.HOSTINGER_IP }}
+          SSH_USER: ${{ secrets.SSH_USER }}
+          SSH_PORT: ${{ secrets.SSH_PORT }}
         run: |
-          echo "APP_KEY=${{ secrets.APP_KEY }}" >> .env
-          echo "DB_CONNECTION=mysql" >> .env
-          echo "DB_HOST=${{ secrets.DB_HOST }}" >> .env
-          echo "DB_PORT=3306" >> .env
-          echo "DB_DATABASE=${{ secrets.DB_DATABASE }}" >> .env
-          echo "DB_USERNAME=${{ secrets.DB_USERNAME }}" >> .env
-          echo "DB_PASSWORD=${{ secrets.DB_PASSWORD }}" >> .env
+          mkdir -p ~/.ssh
+          echo "$SSH_PRIVATE_KEY" > ~/.ssh/id_rsa
+          chmod 600 ~/.ssh/id_rsa
+          ssh-keyscan -p $SSH_PORT -H $HOSTINGER_IP >> ~/.ssh/known_hosts
 
-      - name: Cache Laravel Configuration
+      - name: Deploy Laravel API to Hostinger
         run: |
-          php artisan config:clear
-          php artisan config:cache
-          php artisan route:cache
-          php artisan view:cache
-
-      - name: Upload Files to Hostinger
-        uses: SamKirkland/FTP-Deploy-Action@v4.3.0
-        with:
-          server: ${{ secrets.FTP_HOST }}
-          username: ${{ secrets.FTP_USERNAME }}
-          password: ${{ secrets.FTP_PASSWORD }}
-          local-dir: "./"
-          server-dir: "/public_html/api/"
-
-      - name: Run Laravel Migrations
-        run: php artisan migrate --force
+          ssh -p $SSH_PORT $SSH_USER@$HOSTINGER_IP << 'EOF'
+            cd public_html/api
+            git reset --hard  # Reset changes to avoid conflicts
+            git pull origin main
+            composer install --no-dev --optimize-autoloader
+            php artisan migrate --force
+            php artisan config:clear
+            php artisan cache:clear
+            php artisan config:cache
+            php artisan route:cache
+            php artisan view:cache
+            exit
+          EOF
