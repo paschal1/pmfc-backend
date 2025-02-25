@@ -15,44 +15,48 @@ jobs:
 
       - name: Debug SSH Variables
         run: |
-          echo "SSH_PORT: $SSH_PORT"
-          echo "SSH_USER: $SSH_USER"
-          echo "HOSTINGER_IP: $HOSTINGER_IP"
+          echo "SSH_PORT: ${{ secrets.SSH_PORT }}"
+          echo "SSH_USER: ${{ secrets.SSH_USER }}"
+          echo "HOSTINGER_IP: ${{ secrets.HOSTINGER_IP }}"
 
       - name: Setup SSH
         env:
           SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
-          HOSTINGER_IP: ${{ secrets.HOSTINGER_IP }}
-          SSH_USER: ${{ secrets.SSH_USER }}
           SSH_PORT: ${{ secrets.SSH_PORT }}
+          SSH_USER: ${{ secrets.SSH_USER }}
+          HOSTINGER_IP: ${{ secrets.HOSTINGER_IP }}
         run: |
-          set -x  # Enable debugging
           mkdir -p ~/.ssh
           echo "$SSH_PRIVATE_KEY" > ~/.ssh/id_rsa
           chmod 600 ~/.ssh/id_rsa
-          ssh-keyscan -p $SSH_PORT -H $HOSTINGER_IP >> ~/.ssh/known_hosts
+          ssh-keyscan -p "$SSH_PORT" -H "$HOSTINGER_IP" >> ~/.ssh/known_hosts
 
       - name: Test SSH Connection
+        env:
+          SSH_PORT: ${{ secrets.SSH_PORT }}
+          SSH_USER: ${{ secrets.SSH_USER }}
+          HOSTINGER_IP: ${{ secrets.HOSTINGER_IP }}
         run: |
-          set -x
-          ssh -o StrictHostKeyChecking=no -p $SSH_PORT $SSH_USER@$HOSTINGER_IP "echo 'SSH Connection Successful'"
+          ssh -o StrictHostKeyChecking=no -p "$SSH_PORT" "$SSH_USER@$HOSTINGER_IP" "echo 'SSH Connection Successful'"
 
       - name: Deploy Laravel API to Hostinger
+        env:
+          SSH_PORT: ${{ secrets.SSH_PORT }}
+          SSH_USER: ${{ secrets.SSH_USER }}
+          HOSTINGER_IP: ${{ secrets.HOSTINGER_IP }}
         run: |
-          set -x
-          ssh -p $SSH_PORT $SSH_USER@$HOSTINGER_IP << 'EOF'
-            set -x  # Enable debugging inside SSH
-            cd public_html/api || exit 1
+          ssh -p "$SSH_PORT" "$SSH_USER@$HOSTINGER_IP" << 'EOF'
+            cd public_html/api
             
             echo "🔄 Resetting Git Repository"
-            git reset --hard || exit 1
-            git pull origin master || exit 1
+            git reset --hard
+            git pull origin master
             
             echo "📦 Installing Dependencies"
-            composer install --no-dev --optimize-autoloader || exit 1
+            composer install --no-dev --optimize-autoloader
             
             echo "🚀 Running Migrations"
-            php artisan migrate --force || exit 1
+            php artisan migrate --force
             
             echo "🧹 Clearing Caches"
             php artisan config:clear
