@@ -26,25 +26,33 @@ jobs:
           SSH_USER: ${{ secrets.SSH_USER }}
           SSH_PORT: ${{ secrets.SSH_PORT }}
         run: |
+          set -x  # Enable debugging
           mkdir -p ~/.ssh
           echo "$SSH_PRIVATE_KEY" > ~/.ssh/id_rsa
           chmod 600 ~/.ssh/id_rsa
           ssh-keyscan -p $SSH_PORT -H $HOSTINGER_IP >> ~/.ssh/known_hosts
 
+      - name: Test SSH Connection
+        run: |
+          set -x
+          ssh -o StrictHostKeyChecking=no -p $SSH_PORT $SSH_USER@$HOSTINGER_IP "echo 'SSH Connection Successful'"
+
       - name: Deploy Laravel API to Hostinger
         run: |
+          set -x
           ssh -p $SSH_PORT $SSH_USER@$HOSTINGER_IP << 'EOF'
-            cd public_html/api
+            set -x  # Enable debugging inside SSH
+            cd public_html/api || exit 1
             
             echo "🔄 Resetting Git Repository"
-            git reset --hard
-            git pull origin master
+            git reset --hard || exit 1
+            git pull origin master || exit 1
             
             echo "📦 Installing Dependencies"
-            composer install --no-dev --optimize-autoloader
+            composer install --no-dev --optimize-autoloader || exit 1
             
             echo "🚀 Running Migrations"
-            php artisan migrate --force
+            php artisan migrate --force || exit 1
             
             echo "🧹 Clearing Caches"
             php artisan config:clear
