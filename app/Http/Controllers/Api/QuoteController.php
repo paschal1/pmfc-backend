@@ -60,6 +60,13 @@ public function store(Request $request)
     // Validate the incoming request
     $validated = $request->validate([
         'email' => 'required|email|unique:quotes,email',
+        'name' => 'required|string',
+        'phone' => 'required|string',
+        'message' => 'required|string',
+        'areasize' => 'required|string',
+        'location' => 'required|string',
+        'squarefeet' => 'required|string',
+        'budget' => 'required|string',
         'services' => 'required|array',
         'services.*' => 'exists:services,id', // Validate each service ID
     ]);

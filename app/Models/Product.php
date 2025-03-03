@@ -16,6 +16,7 @@ class Product extends Model
         'stock',
         'price',
         'image',
+        'thumbnailImage',
     ];
 
     // Define the relationship between Product and Category (many-to-one)

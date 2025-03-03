@@ -26,10 +26,14 @@ class CategoryController extends Controller
     {
         $validatedData = $request->validate([
             'name' => 'required|string|max:255|unique:categories,name',
+            'image' => 'nullable|image|mimes:jpg,jpeg,png,webp,gif|max:2048',
+            'thumbnailimage' => 'nullable|image|mimes:jpg,jpeg,png,webp,gif|max:2048',
         ]);
 
         $category = Category::create([
             'name' => $validatedData['name'],
+            'image' => $validatedData['image'],
+            'thumbnailimage' => $validatedData['thumbnailimage'],
             'slug' => Str::slug($validatedData['name']),
         ]);
 
@@ -56,12 +60,16 @@ class CategoryController extends Controller
     
             $request->validate([
                 'name' => 'required|string|max:255|unique:categories,name',
+                'image' => 'nullable|image|mimes:jpg,jpeg,png,webp,gif|max:2048',
+                'thumbnailimage' => 'nullable|image|mimes:jpg,jpeg,png,webp,gif|max:2048',
             ]);
     
 
 
         $category->update([
             'name' => $request->input('name'),
+            'image' => $request->input('image'),
+            'thumbnailimage' => $request->input('thumbnailimage'),
 
         ]);
 

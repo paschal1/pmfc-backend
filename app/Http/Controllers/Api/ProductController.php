@@ -37,6 +37,7 @@ class ProductController extends Controller
             'stock' => 'required|integer|min:0',
             'category_id' => 'required|exists:categories,id',
             'image' => 'nullable|image|mimes:jpg,jpeg,png,webp,gif|max:2048',
+            'thumbnailImage' => 'nullable|image|mimes:jpg,jpeg,png,webp,gif|max:2048',
         ]);
 
           // Handle image upload if provided
@@ -54,6 +55,21 @@ class ProductController extends Controller
         }
     }
 
+          // Handle image upload if provided
+          $thumbnailImagePath = null;
+          if ($request->hasFile('thumbnailImage')) {
+              $imageResponse = ImageProcessor::processImage($request, 'products', 300, 200);
+              if ($imageResponse['success']) {
+                  $thumbnailImagePath = $imageResponse['image_url']; // Path to the processed image
+              } else {
+                  return response()->json([
+                      'status' => false,
+                      'message' => 'Image upload failed!',
+                      'errors' => $imageResponse['errors'] ?? 'An unknown error occurred.',
+                  ], 400);
+              }
+          }
+
 
         // Create the product
         $product = Product::create([
@@ -63,6 +79,7 @@ class ProductController extends Controller
             'stock' => $request->stock,
             'category_id' => $request->category_id,
             'image' => $imagePath,
+            'thumbnailImage' => $thumbnailImagePath,  
         ]);
 
         return response()->json([
@@ -96,6 +113,7 @@ class ProductController extends Controller
                 'stock' => 'required|integer|min:0',
                 'category_id' => 'required|exists:categories,id',
                 'image' => 'nullable|image|mimes:jpg,jpeg,png,webp,gif|max:2048',
+                'thumbnailImage' => 'nullable|image|mimes:jpg,jpeg,png,webp,gif|max:2048',
             ]);
     
             // Handle image upload
@@ -117,6 +135,26 @@ class ProductController extends Controller
                     ], 400);
                 }
             }
+
+             // Handle image upload
+             $thumbnailImagePath = $product->thumbnailImage; // Keep existing image path as fallback
+             if ($request->hasFile('thumbnailImage')) {
+                 // Delete the old image if it exists
+                 if ($product->thumbnailImage) {
+                     Storage::delete('public/products/' . $product->thumbnailImage);
+                 }
+     
+                 $imageResponse = ImageProcessor::processImage($request, 'products', 300, 200);
+                 if ($imageResponse['success']) {
+                     $thumbnailImagePath = $imageResponse['image_url']; // Path to the processed image
+                 } else {
+                     return response()->json([
+                         'status' => false,
+                         'message' => 'Image upload failed!',
+                         'errors' => $imageResponse['errors'] ?? 'An unknown error occurred.',
+                     ], 400);
+                 }
+             }
     
             // Update product
             $product->update([
@@ -126,6 +164,7 @@ class ProductController extends Controller
                 'stock' => $request->input('stock'),
                 'category_id' => $request->input('category_id'),
                 'image' => $imagePath,
+                'thumbnailImage' => $thumbnailImagePath, 
             ]);
     
             return response()->json([
