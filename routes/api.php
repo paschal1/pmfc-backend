@@ -126,7 +126,14 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::apiResource('ratings', RatingController::class);
     Route::post('/pay', [PaymentController::class, 'redirectToGateway'])->name('payment.redirect');
 Route::get('/payment/callback', [PaymentController::class, 'handleGatewayCallback'])->name('payment.callback');
+Route::post('/orders/{orderId}/cancel', [OrderController::class, 'cancelOrder']);
+Route::get('/orders/track/{trackingNumber}', [OrderController::class, 'trackOrder']);
+Route::post('/orders/{id}/refund', [OrderController::class, 'issueRefund']); // Add refund route
+Route::get('/orders/user', [OrderController::class, 'getUserOrders']); // Get orders for authenticated user
 
 });
+
+
+
 
 //SHA256:nW1Z+0L8wk6b6iM7zZC2Xatdj5YGngbMIrlbukzn3iY ssh -p 65002 u268258642@46.17.175.156

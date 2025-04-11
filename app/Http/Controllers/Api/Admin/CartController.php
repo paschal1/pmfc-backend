@@ -87,8 +87,7 @@ public function removeItemFromCart($cartId, $itemId)
 
 public function checkout(Request $request, $cartId)
 {
-
-      // Validate the request
+    // Validate the request
     $request->validate([
         'shipping_address' => 'required|string',
         'shipping_state' => 'nullable|string',
@@ -96,7 +95,11 @@ public function checkout(Request $request, $cartId)
         'shipping_zip_code' => 'nullable|string',
         'email' => 'nullable|email',
         'fullname' => 'nullable|string',
+        'payment_method' => 'nullable|string|in:Bank Transfer,Credit Card,PayPal',
+        'payment_type' => 'nullable|string|in:Full Payment,Deposit',
+        'deposit_amount' => 'nullable|numeric|min:0',
     ]);
+
     // Retrieve the cart
     $cart = Cart::findOrFail($cartId);
 
@@ -113,26 +116,47 @@ public function checkout(Request $request, $cartId)
     }
 
     // Calculate total price
-    $totalPrice = $cartItems->reduce(function ($total, $item) {
-        return $total + ($item->product->price * $item->quantity);
-    }, 0);
+    $totalPrice = $cartItems->sum(fn($item) => $item->product->price * $item->quantity);
 
-   // Determine order details based on request input
-   $orderData = [
-    'user_id' => $cart->user_id,
-    'total_price' => $totalPrice,
-    'status' => 'pending',
-    'payment_status' => 'Unpaid',
-    'order_date' => now(),
-    'shipping_address' => $request->input('shipping_address', $cart->user->address),
-    'shipping_state' => $request->input('shipping_state'),
-    'shipping_city' => $request->input('shipping_city'),
-    'shipping_zip_code' => $request->input('shipping_zip_code'),
-    'fullname' => $request->input('fullname', $cart->user->name),
-    'email' => $request->input('email', $cart->user->email),
-];
+    // Determine payment method and type
+    $paymentMethod = $request->input('payment_method', 'Bank Transfer');
+    $paymentType = $request->input('payment_type', 'Full Payment');
+    
+    // Calculate deposit and remaining amount
+    $depositAmount = ($paymentType === 'Full Payment') ? $totalPrice : $request->input('deposit_amount', 0);
+    $remainingAmount = ($paymentType === 'Full Payment') ? 0 : ($totalPrice - $depositAmount);
+
+    // Ensure deposit amount is valid
+    if ($paymentType === 'Deposit' && ($depositAmount <= 0 || $depositAmount >= $totalPrice)) {
+        return response()->json(['message' => 'Invalid deposit amount.'], 400);
+    }
+
+    // Generate tracking number
+    $trackingNumber = uniqid('TRK_');
+
+    // Determine order details based on request input
+    $orderData = [
+        'user_id' => $cart->user_id,
+        'total_price' => $totalPrice,
+        'status' => 'order_processing', // Default status
+        'payment_status' => ($paymentType === 'Full Payment' ? 'Paid' : 'Unpaid'),
+        'tracking_number' => $trackingNumber,
+        'order_date' => now(),
+        'shipping_address' => $request->input('shipping_address', $cart->user->address ?? 'N/A'),
+        'shipping_state' => $request->input('shipping_state'),
+        'shipping_city' => $request->input('shipping_city'),
+        'shipping_zip_code' => $request->input('shipping_zip_code'),
+        'fullname' => $request->input('fullname', $cart->user->name ?? 'Unknown'),
+        'email' => $request->input('email', $cart->user->email ?? 'no-reply@example.com'),
+        'payment_method' => $paymentMethod,
+        'payment_type' => $paymentType,
+        'deposit_amount' => $depositAmount,
+        'remaining_amount' => $remainingAmount,
+    ];
+
     // Create the order
-$order = Order::create($orderData);
+    $order = Order::create($orderData);
+
     // Create order items
     foreach ($cartItems as $item) {
         OrderItem::create([
@@ -145,11 +169,10 @@ $order = Order::create($orderData);
     }
 
     // Mark the cart as checked out
-    $cart->status = 'checked_out';
-    $cart->save();
+    $cart->update(['status' => 'checked_out']);
 
     // Determine email recipient
-    $emailRecipient = $request->filled('email') ? $request->email : $cart->user->email;
+    $emailRecipient = $request->filled('email') ? $request->email : ($cart->user->email ?? 'no-reply@example.com');
 
     // Send an email to the determined recipient
     Mail::to($emailRecipient)->send(new OrderMail($order));
@@ -163,6 +186,5 @@ $order = Order::create($orderData);
         'order' => $order->load('orderItems'),
     ], 200);
 }
-
 
 }

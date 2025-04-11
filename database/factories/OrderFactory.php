@@ -6,6 +6,8 @@ use App\Models\Order;
 use App\Models\User;
 use App\Models\Product;
 use Illuminate\Database\Eloquent\Factories\Factory;
+use Illuminate\Support\Str;
+    
 
 /**
  * @extends \Illuminate\Database\Eloquent\Factories\Factory<\App\Models\Order>
@@ -35,7 +37,14 @@ class OrderFactory extends Factory
                 return $product ? $product->price * $attributes['quantity'] : 0;
             },
             'order_date' => $this->faker->dateTimeBetween('-1 month', 'now'),
-            'status' => $this->faker->randomElement(['pending', 'processing', 'completed', 'cancelled']),
+            'tracking_number' => 'TRK' . strtoupper(Str::random(10)),
+            'payment_status' => $this->faker->randomElement(['pending', 'completed', 'failed', 'Unpaid']),
+            'status' => $this->faker->randomElement([ 'order_processing', 
+            'pre_production', 
+            'in_production', 
+            'shipped', 
+            'delivered',
+            'canceled']),
             'shipping_address' => $this->faker->address(), // Generate a random shipping address
         ];
         

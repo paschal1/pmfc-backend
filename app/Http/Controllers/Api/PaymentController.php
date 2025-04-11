@@ -64,5 +64,3 @@ class PaymentController extends Controller
         return response()->json(['message' => 'Payment failed or invalid transaction'], 400);
     }
 }
-
- r

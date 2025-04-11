@@ -18,8 +18,20 @@ return new class extends Migration
             $table->decimal('total_price', 10, 2);
             $table->string('fullname')->nullable();
             $table->string('email')->nullable();
-            $table->string('status')->default('pending');
+            $table->string('payment_method')->default('Bank Transfer'); // Bank Transfer, Credit Card, PayPal
+            $table->string('payment_type')->default('Full Payment'); // Full Payment, Deposit
+            $table->decimal('deposit_amount', 10, 2)->nullable();
+            $table->decimal('remaining_amount', 10, 2)->nullable();
             $table->string('payment_status')->default('Unpaid'); // Unpaid, Paid
+            $table->string('tracking_number')->unique();
+            $table->enum('status', [
+                'order_processing', 
+                'pre_production', 
+                'in_production', 
+                'shipped', 
+                'delivered',
+                'canceled'
+            ])->default('order_processing');
             $table->string('transaction_id')->nullable();
             $table->date('order_date');
             $table->text('shipping_address');

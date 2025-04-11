@@ -30,6 +30,8 @@ class CategoryFactory extends Factory
         return [
             'name' => $name,
             'slug' => $this->faker->unique()->slug(),  // Ensures the slug is unique
+            'image' => 'default.png',
+            'thumbnailimage' => 'default.png',
         ];
     }
 }
