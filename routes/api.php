@@ -94,7 +94,7 @@ Route::middleware(['auth:sanctum'])->group(function () {
     // Trainer Routes (Role-based Middleware)
     //////////////////////////////////////////////////////////
 
-    Route::middleware(['role:manager', 'log.activity'])->group(function () {
+    Route::middleware(['role:admin|manager', 'log.activity'])->group(function () {
         Route::apiResource('training-programs', TrainingController::class);
     });
 
@@ -102,7 +102,7 @@ Route::middleware(['auth:sanctum'])->group(function () {
     // Trainee Routes (Role-based Middleware)
     //////////////////////////////////////////////////////////
 
-    Route::middleware(['role:manager', 'log.activity'])->group(function () {
+    Route::middleware(['role:admin|manager', 'log.activity'])->group(function () {
         Route::get('my-training', [TrainingController::class, 'index']);
     });
 
@@ -110,7 +110,7 @@ Route::middleware(['auth:sanctum'])->group(function () {
     // Customer Routes (Role-based Middleware)
     //////////////////////////////////////////////////////////
 
-    Route::middleware(['role:customer', 'log.activity'])->group(function () {
+    Route::middleware(['role:admin|customer', 'log.activity'])->group(function () {
         Route::get('my-training', [TrainingController::class, 'index']);
     });
 
@@ -118,7 +118,7 @@ Route::middleware(['auth:sanctum'])->group(function () {
     // Manager Routes (Role-based Middleware)
     //////////////////////////////////////////////////////////
 
-    Route::middleware(['role:manager', 'log.activity'])->group(function () {
+    Route::middleware(['role:admin|manager', 'log.activity'])->group(function () {
         Route::get('my-training', [TrainingController::class, 'index']);
     });
 
