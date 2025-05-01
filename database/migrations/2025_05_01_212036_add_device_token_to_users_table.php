@@ -11,10 +11,9 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('roles', function (Blueprint $table) {
-            $table->id();
-            $table->string('name')->unique(); // e.g., Admin, Trainer
-            $table->timestamps();
+        Schema::table('users', function (Blueprint $table) {
+            $table->string('device_token')->nullable();
+            $table->string('device_platform')->nullable();
         });
     }
 
@@ -23,6 +22,8 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('roles');
+        Schema::table('users', function (Blueprint $table) {
+            $table->dropColumn(['device_token', 'device_platform']);
+        });
     }
 };

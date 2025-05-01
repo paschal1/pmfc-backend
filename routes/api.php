@@ -27,113 +27,145 @@ use App\Http\Controllers\Api\ContactController;
 use App\Http\Controllers\Api\ProjectController;
 use App\Http\Controllers\Api\QuoteController;
 use App\Http\Controllers\Api\PaymentController;
+use App\Http\Controllers\Api\Admin\RolePermissionController;
 
+//////////////////////////////////////////////////////////////
+// Public Routes
+//////////////////////////////////////////////////////////////
 
-
-// Route::post('register', [RegisteredUserController::class, 'register'])->name('api.user.register');
+// Register and login routes
 Route::post('/register', [RegisterController::class, 'register']);
+Route::post('/login', [AuthController::class, 'login'])->name('api.user.login');
 
-Route::middleware(['auth:sanctum'])->get('/user', function (Request $request) {
-    return $request->user();
-});
+//////////////////////////////////////////////////////////////
+// Authenticated Routes (With Sanctum Middleware)
+//////////////////////////////////////////////////////////////
 
+Route::middleware(['auth:sanctum'])->group(function () {
+    
+    // User Profile and Dashboard
+    Route::get('/user', function (Request $request) {
+        return $request->user();
+    });
 
-    Route::post('/login', [AuthController::class, 'login'])->name('api.user.login');
-
-
-
-Route::middleware(['auth:sanctum', 'log.activity'])->group(function () {
     Route::get('/activeUse', [UserController::class, 'activeUse'])->name('activeUser');
     Route::get('/dashboard', [AnalyticsDashboardController::class, 'index'])->name('dashboard');
-    Route::post('/place-order', [UserController::class, 'place-order']); //will come back to this
-    Route::get('/update-profile', [UserController::class, 'update-profile']); //will come back to this
-});
+    Route::post('/place-order', [UserController::class, 'placeOrder']); // Customize this route later
+    Route::get('/update-profile', [UserController::class, 'updateProfile']); // Customize this route later
 
-Route::middleware(['auth:sanctum', 'role:Admin', 'log.activity'])->group( function () {
+    //////////////////////////////////////////////////////////
+    // Admin Routes (Role-based Middleware)
+    //////////////////////////////////////////////////////////
+
+    Route::middleware(['role:admin', 'log.activity'])->group(function () {
+
+        Route::apiResource('products', ProductController::class);
+        Route::apiResource('orders', OrderController::class);
+        Route::apiResource('students', StudentController::class);
+
+        // Analytics Routes
+        Route::get('/analytics/sales-reports', [AnalyticsDashboardController::class, 'salesReports']);
+        Route::get('/analytics/user-activity', [AnalyticsDashboardController::class, 'userActivity']);
+        Route::get('/analytics/website-performance', [AnalyticsDashboardController::class, 'websitePerformance']);
+
+        // Permission and Role Routes
+        Route::prefix('permissions')->group(function () {
+            Route::post('/', [PermissionController::class, 'store']);
+            Route::delete('/{id}', [PermissionController::class, 'destroy']);
+        });
+
+        Route::prefix('roles')->group(function () {
+            Route::get('/', [RoleController::class, 'index']);
+            Route::post('/', [RoleController::class, 'store']);
+            Route::put('/{id}', [RoleController::class, 'update']);
+            Route::delete('/{id}', [RoleController::class, 'destroy']);
+            Route::get('/permissions', [RoleController::class, 'getPermissions']);
+            Route::post('admin/permissions/create', [RoleController::class, 'createPermission']);
     
-    Route::apiResource('products', ProductController::class);
-    Route::apiResource('orders', OrderController::class);
-    Route::apiResource('students', StudentController::class);
-    Route::get('/analytics/sales-reports', [AnalyticsDashboardController::class, 'salesReports']);
-    Route::get('/analytics/sales-reports', [AnalyticsDashboardController::class, 'salesReports']);
-    Route::get('/analytics/user-activity', [AnalyticsDashboardController::class, 'userActivity']);
-    Route::get('/analytics/website-performance', [AnalyticsDashboardController::class, 'websitePerformance']);
+            // Create Role and assign permissions
+            Route::post('admin/create', [RoleController::class, 'createRole']);
+        });
 
-    Route::prefix('permissions')->group(function () {
-        Route::post('/', [PermissionController::class, 'store']); // Create one or more permissions
-        Route::delete('/{id}', [PermissionController::class, 'destroy']); // Delete a permission
     });
+
     
-    Route::prefix('roles')->group(function () {
-        Route::get('/', [RoleController::class, 'index']); // Get all roles
-        Route::post('/', [RoleController::class, 'store']); // Create a new role
-        Route::put('/{id}', [RoleController::class, 'update']); // Update role permissions
-        Route::delete('/{id}', [RoleController::class, 'destroy']); // Delete role
-        Route::get('/permissions', [RoleController::class, 'getPermissions']); // Get all permissions
+    
+    //////////////////////////////////////////////////////////
+    // Trainer Routes (Role-based Middleware)
+    //////////////////////////////////////////////////////////
+
+    Route::middleware(['role:manager', 'log.activity'])->group(function () {
+        Route::apiResource('training-programs', TrainingController::class);
     });
 
-});
+    //////////////////////////////////////////////////////////
+    // Trainee Routes (Role-based Middleware)
+    //////////////////////////////////////////////////////////
 
-Route::group(['middleware' => ['auth:sanctum', 'role:Trainer']], function () {
-    Route::apiResource('training-programs', TrainingController::class);
-});
+    Route::middleware(['role:manager', 'log.activity'])->group(function () {
+        Route::get('my-training', [TrainingController::class, 'index']);
+    });
 
-Route::group(['middleware' => ['auth:sanctum', 'role:Trainee']], function () {
-    Route::get('my-training', [TrainingController::class, 'index']);
-});
+    //////////////////////////////////////////////////////////
+    // Customer Routes (Role-based Middleware)
+    //////////////////////////////////////////////////////////
 
-Route::group(['middleware' => ['auth:sanctum', 'role:Manager']], function () {
-    Route::get('my-training', [TrainingController::class, 'index']);
-});
+    Route::middleware(['role:customer', 'log.activity'])->group(function () {
+        Route::get('my-training', [TrainingController::class, 'index']);
+    });
 
-Route::group(['middleware' => ['auth:sanctum', 'role:Customer']], function () {
-    Route::get('my-training', [TrainingController::class, 'index']);
-});
+    //////////////////////////////////////////////////////////
+    // Manager Routes (Role-based Middleware)
+    //////////////////////////////////////////////////////////
 
+    Route::middleware(['role:manager', 'log.activity'])->group(function () {
+        Route::get('my-training', [TrainingController::class, 'index']);
+    });
 
+    //////////////////////////////////////////////////////////
+    // Other Common Routes
+    //////////////////////////////////////////////////////////
 
-Route::get('contacts', [ContactController::class, 'index']);
-Route::apiResource('cartItems', CartItemController::class);
-Route::post('contacts', [ContactController::class, 'store']);
-Route::put('contacts/{id}/status', [ContactController::class, 'update']);
+    // Cart Routes
+    Route::apiResource('cartItems', CartItemController::class);
+    Route::get('cart', [CartController::class, 'viewCart']);
+    Route::post('cart/{cartId}/items', [CartController::class, 'addItemToCart']);
+    Route::put('cart/{cartId}/items/{itemId}', [CartController::class, 'updateItemQuantity']);
+    Route::delete('cart/{cartId}/items/{itemId}', [CartController::class, 'removeItemFromCart']);
+    Route::post('cart/{cartId}/checkout', [CartController::class, 'checkout']);
 
-Route::apiResource('projects', ProjectController::class);
-
-
-Route::post('quotes', [QuoteController::class, 'store']);
-
-Route::middleware('auth:sanctum')->group(function () {
-    Route::get('cart', [CartController::class, 'viewCart']); // View cart
-    Route::post('cart/{cartId}/items', [CartController::class, 'addItemToCart']); // Add item to cart
-    Route::put('cart/{cartId}/items/{itemId}', [CartController::class, 'updateItemQuantity']); // Update item quantity
-    Route::delete('cart/{cartId}/items/{itemId}', [CartController::class, 'removeItemFromCart']); // Remove item from cart
-    Route::post('cart/{cartId}/checkout', [CartController::class, 'checkout']); // Checkout
-
+    // Enrollment Routes
     Route::get('/enrollments', [EnrollmentController::class, 'index']);
     Route::post('/enroll', [EnrollmentController::class, 'enroll']);
     Route::get('/enrollments/{id}', [EnrollmentController::class, 'show']);
     Route::delete('/enrollments/{id}', [EnrollmentController::class, 'destroy']);
     Route::post('/unenroll', [TrainingController::class, 'unenroll']);
+
+    // Service, Testimonial, and Wishlist Routes
     Route::apiResource('categories', CategoryController::class);
     Route::apiResource('blogs', BlogController::class);
-    Route::apiResource('projects', BlogController::class);
-    Route::apiResource('enrollments', EnrollmentController::class);
-    Route::apiResource('students', StudentController::class);
-    Route::apiResource('trainings', TrainingController::class);
+    Route::apiResource('projects', ProjectController::class);
     Route::apiResource('services', ServiceController::class);
     Route::apiResource('testimonials', TestimonialController::class);
     Route::apiResource('whishlists', WishlistController::class);
     Route::apiResource('ratings', RatingController::class);
-    Route::post('/pay', [PaymentController::class, 'redirectToGateway'])->name('payment.redirect');
-Route::get('/payment/callback', [PaymentController::class, 'handleGatewayCallback'])->name('payment.callback');
-Route::post('/orders/{orderId}/cancel', [OrderController::class, 'cancelOrder']);
-Route::get('/orders/track/{trackingNumber}', [OrderController::class, 'trackOrder']);
-Route::post('/orders/{id}/refund', [OrderController::class, 'issueRefund']); // Add refund route
-Route::get('/orders/user', [OrderController::class, 'getUserOrders']); // Get orders for authenticated user
 
+    // Quote and Payment Routes
+    Route::post('quotes', [QuoteController::class, 'store']);
+    Route::post('/pay', [PaymentController::class, 'redirectToGateway'])->name('payment.redirect');
+    Route::get('/payment/callback', [PaymentController::class, 'handleGatewayCallback'])->name('payment.callback');
+
+    // Order Routes
+    Route::post('/orders/{orderId}/cancel', [OrderController::class, 'cancelOrder']);
+    Route::get('/orders/track/{trackingNumber}', [OrderController::class, 'trackOrder']);
+    Route::post('/orders/{id}/refund', [OrderController::class, 'issueRefund']);
+    Route::get('/orders/user', [OrderController::class, 'getUserOrders']);
 });
 
+//////////////////////////////////////////////////////////////
+// Contact Routes (Public and Authenticated)
+//////////////////////////////////////////////////////////////
 
-
-
-//SHA256:nW1Z+0L8wk6b6iM7zZC2Xatdj5YGngbMIrlbukzn3iY ssh -p 65002 u268258642@46.17.175.156
+Route::get('contacts', [ContactController::class, 'index']);
+Route::post('contacts', [ContactController::class, 'store']);
+Route::put('contacts/{id}/status', [ContactController::class, 'update']);

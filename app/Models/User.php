@@ -2,16 +2,15 @@
 
 namespace App\Models;
 
-// use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Laravel\Sanctum\HasApiTokens;
+use Spatie\Permission\Traits\HasRoles;
 
 class User extends Authenticatable
 {
-    /** @use HasFactory<\Database\Factories\UserFactory> */
-    use HasFactory, Notifiable, HasApiTokens;
+    use HasApiTokens, HasFactory, Notifiable, HasRoles;
 
     /**
      * The attributes that are mass assignable.
@@ -27,7 +26,7 @@ class User extends Authenticatable
     ];
 
     /**
-     * The attributes that should be hidden for serialization.
+     * The attributes that should be hidden for arrays.
      *
      * @var array<int, string>
      */
@@ -37,51 +36,48 @@ class User extends Authenticatable
     ];
 
     /**
-     * Get the attributes that should be cast.
+     * The attributes that should be cast.
      *
-     * @return array<string, string>
+     * @var array<string, string>
      */
-    protected function casts(): array
-    {
-        return [
-            'email_verified_at' => 'datetime',
-            'password' => 'hashed',
-        ];
-    }
+    protected $casts = [
+        'email_verified_at' => 'datetime',
+        'last_login_at' => 'datetime',
+    ];
 
+    /**
+     * Check if the user is active (based on login or recent activity).
+     */
     public function isActive()
-{
-    $recentActivity = $this->activityLogs()
-        ->where('created_at', '>=', now()->subDays(30))
-        ->exists();
-
-    return $this->last_login_at >= now()->subDays(30) || $recentActivity;
-}
-
-public function activityLogs()
-{
-    return $this->hasMany(UserActivityLog::class);
-}
-
-
-public function ratings()
-{
-    return $this->hasMany(Rating::class);
-}
-
-public function role()
     {
-        return $this->belongsTo(Role::class);
+        $recentActivity = $this->activityLogs()
+            ->where('created_at', '>=', now()->subDays(30))
+            ->exists();
+
+        return $this->last_login_at >= now()->subDays(30) || $recentActivity;
     }
 
-public function hasPermission($permissionName)
+    /**
+     * User activity logs relationship.
+     */
+    public function activityLogs()
     {
-        return $this->role->permissions->contains('name', $permissionName);
+        return $this->hasMany(UserActivityLog::class);
     }
 
+    /**
+     * Ratings relationship.
+     */
+    public function ratings()
+    {
+        return $this->hasMany(Rating::class);
+    }
+
+    /**
+     * Wishlist (Many-to-Many with Product).
+     */
     public function wishlist()
     {
         return $this->belongsToMany(Product::class, 'wishlists', 'user_id', 'product_id');
     }
-
 }

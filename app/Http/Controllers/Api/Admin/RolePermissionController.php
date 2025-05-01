@@ -2,12 +2,10 @@
 
 namespace App\Http\Controllers\Api\Admin;
 
-use App\Models\Role;
-use App\Models\Permission;
-use Illuminate\Http\Request;
 use App\Http\Controllers\Controller;
+use Illuminate\Http\Request;
 
-class RoleController extends Controller
+class RolePermissionController extends Controller
 {
     // Create Permission and assign to Role
     public function createPermission(Request $request)

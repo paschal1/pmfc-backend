@@ -44,29 +44,24 @@ class AuthController extends Controller
                 //
                 public function login(Request $request)
                 {
-                    // Validate the login request
                     $request->validate([
                         'email' => 'required|string|email',
-                        'password' => 'required',
-                        'remember_me' => 'boolean',
+                        'password' => 'required|string',
+                        'remember_me' => 'nullable|boolean',
                     ]);
                 
-                    // Attempt to authenticate the user
-                    if (Auth::attempt(['email' => $request->email, 'password' => $request->password], $request->remember_me)) {
-                        $user = Auth::user(); // Get the authenticated user
+                    $remember = filter_var($request->remember_me, FILTER_VALIDATE_BOOLEAN);
                 
-                        // Update device information if provided
-                        if (isset($request->device_token)) {
-                            $user->device_token = $request->device_token;
-                        }
-                        if (isset($request->device_platform)) {
-                            $user->device_platform = $request->device_platform;
-                        }
+                    if (Auth::guard('web')->attempt(['email' => $request->email, 'password' => $request->password], $remember)) {
+                        $user = Auth::user();
                 
-                        // Update last login timestamp
-                        $user->update(['last_login_at' => now()]);
+                        // Update device data and last login
+                        $user->device_token = $request->device_token ?? $user->device_token;
+                        $user->device_platform = $request->device_platform ?? $user->device_platform;
+                        $user->last_login_at = now();
+                        $user->save();
                 
-                        // Log the user activity
+                        // Log user activity
                         UserActivityService::log(
                             $user->id,
                             'login',
@@ -74,34 +69,28 @@ class AuthController extends Controller
                             $request->ip()
                         );
                 
-                        // Generate an API token for the user
+                        // Generate API token
                         $bearerToken = $this->getApiToken($user);
                 
-                        // Check if the user already has an active cart
-                        $cart = Cart::where('user_id', $user->id)->where('status', 'active')->first();
+                        // Check or create cart
+                        $cart = Cart::firstOrCreate(
+                            ['user_id' => $user->id, 'status' => 'active'],
+                            ['status' => 'active']
+                        );
                 
-                        if (!$cart) {
-                            // Create a new cart if none exists
-                            $cart = Cart::create([
-                                'user_id' => $user->id,
-                                'status' => 'active',
-                            ]);
-                        }
-                
-                        // Return the response with user, token, and cart details
                         return response()->json([
                             'message' => 'Logged in successfully',
-                            'user' => $user,
+                            'user' => $user, // optionally wrap with UserResource
                             'bearer_token' => $bearerToken,
                             'cart' => $cart,
-                        ], 200);
+                        ]);
                     }
                 
-                    // Return error if authentication fails
                     return response()->json([
-                        'message' => 'Email or password is incorrect',
+                        'message' => 'Invalid login credentials.',
                     ], 422);
                 }
+                
                 
     
         public function getApiToken(User $user)

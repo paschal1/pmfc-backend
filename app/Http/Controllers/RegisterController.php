@@ -54,29 +54,14 @@ class RegisterController extends Controller
 
     public function register(Request $request)
     {
-        // Validate the incoming request
-        // $validator = Validator::make($request->all(), [
-        //     'name' => 'required|string|max:255',
-        //     'email' => 'required|email|unique:users,email',
-        //     'phone' => 'required|string|max:15|unique:users,phone',
-        //     'address' => 'required|string|max:255',
-        //     'password' => 'required|string|confirmed|min:8',
-        // ]);
         $request->validate([
             'name' => ['required', 'string', 'max:255'],
-            'email' => ['required', 'string', 'lowercase', 'email', 'max:255', 'unique:'.User::class],
+            'email' => ['required', 'string', 'lowercase', 'email', 'max:255', 'unique:' . User::class],
             'phone' => ['required', 'string', 'max:255'],
             'address' => ['required', 'string', 'max:255'],
             'password' => ['required', 'confirmed', 'min:8'],
         ]);
-
-        // if ($validator->fails()) {
-        //     return response()->json([
-        //         'message' => 'Validation errors',
-        //         'errors' => $validator->errors(),
-        //     ], 422);
-        // }
-
+    
         // Create the user
         $user = User::create([
             'name' => $request->input('name'),
@@ -85,22 +70,25 @@ class RegisterController extends Controller
             'address' => $request->input('address'),
             'password' => Hash::make($request->input('password')),
         ]);
-
-
+    
+        // Assign 'customer' role
+        $user->assignRole('customer');
+    
         // Generate a personal access token
         $token = $user->createToken('Personal Access Token')->plainTextToken;
-        
-         // Log the user in
-         auth()->login($user);
-
-          // Send confirmation email to the user
+    
+        // Log the user in (this line is not necessary with Sanctum token auth, so remove or fix)
+        // Auth::guard('sanctum')->login($user); ← This line is not valid; remove it if you're using API tokens.
+    
+        // Send confirmation email to the user
         Mail::to($request->email)->send(new WelcomeMail($user));
-
+    
         return response()->json([
             'message' => 'User registered successfully',
             'user' => $user,
-            'token' => $token, // Return the token for immediate use
+            'token' => $token,
         ], 201);
     }
+    
 
 }

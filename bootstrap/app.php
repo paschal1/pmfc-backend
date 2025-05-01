@@ -17,7 +17,15 @@ return Application::configure(basePath: dirname(__DIR__))
         ]);
 
         $middleware->alias([
+            'auth' => Illuminate\Auth\Middleware\Authenticate::class,
+            'auth.basic' => Illuminate\Auth\Middleware\AuthenticateWithBasicAuth::class,
             'verified' => \App\Http\Middleware\EnsureEmailIsVerified::class,
+            'permission' => \Spatie\Permission\Middleware\PermissionMiddleware::class,
+            'role'       => \Spatie\Permission\Middleware\RoleMiddleware::class,
+            'role_or_permission' => \Spatie\Permission\Middleware\RoleOrPermissionMiddleware::class,
+            'log.activity' => \App\Http\Middleware\LogUserActivity::class,
+            'sanctum' => EnsureFrontendRequestsAreStateful::class,
+            'throttle' => Illuminate\Routing\Middleware\ThrottleRequests::class,
         ]);
 
         //
