@@ -28,11 +28,12 @@ use App\Http\Controllers\Api\ProjectController;
 use App\Http\Controllers\Api\QuoteController;
 use App\Http\Controllers\Api\PaymentController;
 use App\Http\Controllers\Api\Admin\RolePermissionController;
+use Spatie\Permission\Models\Role;
 
 //////////////////////////////////////////////////////////////
 // Public Routes
 //////////////////////////////////////////////////////////////
-
+Route::model('role', Role::class);
 // Register and login routes
 Route::post('/register', [RegisterController::class, 'register']);
 Route::post('/login', [AuthController::class, 'login'])->name('api.user.login');
