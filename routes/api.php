@@ -57,8 +57,8 @@ Route::middleware(['auth:sanctum'])->group(function () {
     //////////////////////////////////////////////////////////
     // Admin Routes (Role-based Middleware)
     //////////////////////////////////////////////////////////
-// 'role:admin', 
-    Route::middleware(['log.activity'])->group(function () {
+
+    Route::middleware(['role:admin', 'log.activity'])->group(function () {
 
         Route::apiResource('products', ProductController::class);
         Route::apiResource('orders', OrderController::class);
@@ -94,32 +94,32 @@ Route::middleware(['auth:sanctum'])->group(function () {
     //////////////////////////////////////////////////////////
     // Trainer Routes (Role-based Middleware)
     //////////////////////////////////////////////////////////
-// 'role:admin|manager',
-    Route::middleware(['log.activity'])->group(function () {
+
+    Route::middleware(['role:admin|manager', 'log.activity'])->group(function () {
         Route::apiResource('training-programs', TrainingController::class);
     });
 
     //////////////////////////////////////////////////////////
     // Trainee Routes (Role-based Middleware)
     //////////////////////////////////////////////////////////
-//  'role:admin|manager',
-    Route::middleware(['log.activity'])->group(function () {
+
+    Route::middleware(['role:admin|manager', 'log.activity'])->group(function () {
         Route::get('my-training', [TrainingController::class, 'index']);
     });
 
     //////////////////////////////////////////////////////////
     // Customer Routes (Role-based Middleware)
     //////////////////////////////////////////////////////////
-    // 'role:admin|customer', 
-    Route::middleware(['log.activity'])->group(function () {
+
+    Route::middleware(['role:admin|customer', 'log.activity'])->group(function () {
         Route::get('my-training', [TrainingController::class, 'index']);
     });
 
     //////////////////////////////////////////////////////////
     // Manager Routes (Role-based Middleware)
     //////////////////////////////////////////////////////////
-    // 'role:admin|manager', 
-    Route::middleware(['log.activity'])->group(function () {
+
+    Route::middleware(['role:admin|manager', 'log.activity'])->group(function () {
         Route::get('my-training', [TrainingController::class, 'index']);
     });
 

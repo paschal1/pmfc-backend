@@ -22,7 +22,7 @@ class CategoryController extends Controller
     /**
      * Store a newly created resource in storage.
      */
-    public function store(Request $request)
+   public function store(Request $request)
     {
         $validatedData = $request->validate([
             'name' => 'required|string|max:255|unique:categories,name',
@@ -30,14 +30,28 @@ class CategoryController extends Controller
             'thumbnailimage' => 'nullable|image|mimes:jpg,jpeg,png,webp,gif|max:2048',
         ]);
 
+        // Handle image upload
+        $imagePath = null;
+        if ($request->hasFile('image')) {
+            $imagePath = $request->file('image')->store('categories/images', 'public');
+        }
+
+        $thumbnailPath = null;
+        if ($request->hasFile('thumbnailimage')) {
+            $thumbnailPath = $request->file('thumbnailimage')->store('categories/thumbnails', 'public');
+        }
+
         $category = Category::create([
             'name' => $validatedData['name'],
-            'image' => $validatedData['image'],
-            'thumbnailimage' => $validatedData['thumbnailimage'],
+            'image' => $imagePath,
+            'thumbnailimage' => $thumbnailPath,
             'slug' => Str::slug($validatedData['name']),
         ]);
 
-        return response()->json(['message' => 'Category created successfully', 'category' => $category], 201);
+        return response()->json([
+            'message' => 'Category created successfully',
+            'category' => $category
+        ], 201);
     }
 
     /**
