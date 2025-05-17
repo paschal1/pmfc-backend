@@ -28,9 +28,10 @@ class ProductController extends Controller
     /**
      * Store a newly created resource in storage.
      */
-    public function store(Request $request)
+ public function store(Request $request)
     {
-        $request->validate([
+        // Validate incoming request data
+        $validated = $request->validate([
             'name' => 'required|string|max:255',
             'description' => 'required|string',
             'price' => 'required|numeric|min:0',
@@ -40,55 +41,55 @@ class ProductController extends Controller
             'thumbnailImage' => 'nullable|image|mimes:jpg,jpeg,png,webp,gif|max:2048',
         ]);
 
-          // Handle image upload if provided
-    $imagePath = null;
-    if ($request->hasFile('image')) {
-        $imageResponse = ImageProcessor::processImage($request, 'products', 300, 200);
-        if ($imageResponse['success']) {
-            $imagePath = $imageResponse['image_url']; // Path to the processed image
-        } else {
-            return response()->json([
-                'status' => false,
-                'message' => 'Image upload failed!',
-                'errors' => $imageResponse['errors'] ?? 'An unknown error occurred.',
-            ], 400);
+        // Initialize image paths
+        $imagePath = null;
+        $thumbnailImagePath = null;
+
+        // Process main image if uploaded
+        if ($request->hasFile('image')) {
+            $imageResponse = ImageProcessor::processImage($request, 'products', 300, 200);
+            if ($imageResponse['success']) {
+                $imagePath = $imageResponse['image_url'];
+            } else {
+                return response()->json([
+                    'status' => false,
+                    'message' => 'Main image upload failed!',
+                    'errors' => $imageResponse['errors'] ?? 'Unknown error.',
+                ], 400);
+            }
         }
-    }
 
-          // Handle image upload if provided
-          $thumbnailImagePath = null;
-          if ($request->hasFile('thumbnailImage')) {
-              $imageResponse = ImageProcessor::processImage($request, 'products', 300, 200);
-              if ($imageResponse['success']) {
-                  $thumbnailImagePath = $imageResponse['image_url']; // Path to the processed image
-              } else {
-                  return response()->json([
-                      'status' => false,
-                      'message' => 'Image upload failed!',
-                      'errors' => $imageResponse['errors'] ?? 'An unknown error occurred.',
-                  ], 400);
-              }
-          }
+        // Process thumbnail image if uploaded
+        if ($request->hasFile('thumbnailImage')) {
+            $thumbnailResponse = ImageProcessor::processImage($request, 'products', 300, 200);
+            if ($thumbnailResponse['success']) {
+                $thumbnailImagePath = $thumbnailResponse['image_url'];
+            } else {
+                return response()->json([
+                    'status' => false,
+                    'message' => 'Thumbnail image upload failed!',
+                    'errors' => $thumbnailResponse['errors'] ?? 'Unknown error.',
+                ], 400);
+            }
+        }
 
-
-        // Create the product
+        // Create product with validated data and image paths
         $product = Product::create([
-            'name' => $request->name,
-            'description' => $request->description,
-            'price' => $request->price,
-            'stock' => $request->stock,
-            'category_id' => $request->category_id,
+            'name' => $validated['name'],
+            'description' => $validated['description'],
+            'price' => $validated['price'],
+            'stock' => $validated['stock'],
+            'category_id' => $validated['category_id'],
             'image' => $imagePath,
-            'thumbnailImage' => $thumbnailImagePath,  
+            'thumbnailImage' => $thumbnailImagePath,
         ]);
 
         return response()->json([
             'status' => true,
-            'message' => Strings::ProductAdded(),
-            'data' => $product
-        ]);
+            'message' => Strings::ProductAdded(),  // Make sure Strings::ProductAdded() exists
+            'data' => $product,
+        ], 201);
     }
-
     /**
      * Display the specified resource.
      */
