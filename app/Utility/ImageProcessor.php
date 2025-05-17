@@ -10,19 +10,19 @@ use Illuminate\Support\Facades\Validator;
 
 class ImageProcessor
 {
-    public static function processImage(Request $request, $destinationPath = 'images', $width = 300, $height = 200)
+    public static function processImage(Request $request, string $fieldName = 'image', $destinationPath = 'images', $width = 300, $height = 200)
     {
-        // Validate the uploaded file
+        // Validate the uploaded file for the given field name
         $validator = Validator::make($request->all(), [
-            'image' => 'required|image|mimes:jpeg,png,jpg,svg,gif|max:2048',
+            $fieldName => 'required|image|mimes:jpeg,png,jpg,svg,gif|max:2048',
         ]);
 
         if ($validator->fails()) {
             return ['success' => false, 'errors' => $validator->errors()];
         }
 
-        // Get the uploaded image from the request
-        $image = $request->file('image');
+        // Get the uploaded image from the request by field name
+        $image = $request->file($fieldName);
         $timestamp = time();
         $filename = $timestamp . '.png'; // Always save as .png
 
