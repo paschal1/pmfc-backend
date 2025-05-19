@@ -41,6 +41,7 @@ class BlogController extends Controller
             ], 401);
         }
 
+        $userId = auth()->id();
     
         // Handle image upload
         if ($request->hasFile('image')) {
@@ -62,7 +63,7 @@ class BlogController extends Controller
             'title' => $validated['title'],
             'content' => $validated['content'],
             'image' => $imagePath,
-            'author_id' => auth()->id(), // Set the authenticated user as the author
+            'author_id' => $userId, // Set the authenticated user as the author
         ];
     
         // Create the blog
