@@ -33,6 +33,14 @@ class BlogController extends Controller
         ]);
     
         $imagePath = null;
+
+    if (!auth()->check()) {
+            return response()->json([
+                'status' => false,
+                'message' => 'Unauthorized. Please log in.',
+            ], 401);
+        }
+
     
         // Handle image upload
         if ($request->hasFile('image')) {
