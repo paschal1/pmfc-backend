@@ -36,7 +36,7 @@ class BlogController extends Controller
     
         // Handle image upload
         if ($request->hasFile('image')) {
-            $imageResponse = ImageProcessor::processImage($request, 'blogs', 300, 200);
+           $imageResponse = ImageProcessor::processImage($request, 'image', 'uploads/blogs', 300, 200);
     
             if (!$imageResponse['success']) {
                 return response()->json([
