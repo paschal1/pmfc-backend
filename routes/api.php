@@ -33,33 +33,66 @@ use Spatie\Permission\Models\Role;
 //////////////////////////////////////////////////////////////
 // Public Routes
 //////////////////////////////////////////////////////////////
+
 Route::model('role', Role::class);
+
 // Register and login routes
 Route::post('/register', [RegisterController::class, 'register']);
 Route::post('/login', [AuthController::class, 'login'])->name('api.user.login');
+
+// Public-facing GET routes (index + show)
+Route::get('products', [ProductController::class, 'index']);
+Route::get('products/{product}', [ProductController::class, 'show']);
+
+Route::get('orders', [OrderController::class, 'index']);
+Route::get('orders/{order}', [OrderController::class, 'show']);
+
+Route::get('students', [StudentController::class, 'index']);
+Route::get('students/{student}', [StudentController::class, 'show']);
+
+Route::get('categories', [CategoryController::class, 'index']);
+Route::get('categories/{category}', [CategoryController::class, 'show']);
+
+Route::get('blogs', [BlogController::class, 'index']);
+Route::get('blogs/{blog}', [BlogController::class, 'show']);
+
+Route::get('projects', [ProjectController::class, 'index']);
+Route::get('projects/{project}', [ProjectController::class, 'show']);
+
+Route::get('services', [ServiceController::class, 'index']);
+Route::get('services/{service}', [ServiceController::class, 'show']);
+
+Route::get('testimonials', [TestimonialController::class, 'index']);
+Route::get('testimonials/{testimonial}', [TestimonialController::class, 'show']);
+
+Route::get('whishlists', [WishlistController::class, 'index']);
+Route::get('whishlists/{whishlist}', [WishlistController::class, 'show']);
+
+Route::get('ratings', [RatingController::class, 'index']);
+Route::get('ratings/{rating}', [RatingController::class, 'show']);
+
+// Contact Routes (public + auth)
+Route::get('contacts', [ContactController::class, 'index']);
+Route::post('contacts', [ContactController::class, 'store']);
+Route::put('contacts/{id}/status', [ContactController::class, 'update']);
 
 //////////////////////////////////////////////////////////////
 // Authenticated Routes (With Sanctum Middleware)
 //////////////////////////////////////////////////////////////
 
 Route::middleware(['auth:sanctum'])->group(function () {
-    
-    // User Profile and Dashboard
-    Route::get('/user', function (Request $request) {
-        return $request->user();
-    });
 
+    // User Profile and Dashboard
+    Route::get('/user', fn(Request $request) => $request->user());
     Route::get('/activeUse', [UserController::class, 'activeUse'])->name('activeUser');
     Route::get('/dashboard', [AnalyticsDashboardController::class, 'index'])->name('dashboard');
-    Route::post('/place-order', [UserController::class, 'placeOrder']); // Customize this route later
-    Route::get('/update-profile', [UserController::class, 'updateProfile']); // Customize this route later
+    Route::post('/place-order', [UserController::class, 'placeOrder']);
+    Route::get('/update-profile', [UserController::class, 'updateProfile']);
 
     //////////////////////////////////////////////////////////
-    // Admin Routes (Role-based Middleware)
+    // Admin Routes
     //////////////////////////////////////////////////////////
-
     Route::middleware(['role:admin', 'log.activity'])->group(function () {
-
         Route::apiResource('products', ProductController::class);
         Route::apiResource('orders', OrderController::class);
         Route::apiResource('students', StudentController::class);
@@ -82,44 +115,15 @@ Route::middleware(['auth:sanctum'])->group(function () {
             Route::delete('/{id}', [RoleController::class, 'destroy']);
             Route::get('/permissions', [RoleController::class, 'getPermissions']);
             Route::post('admin/permissions/create', [RoleController::class, 'createPermission']);
-    
-            // Create Role and assign permissions
             Route::post('admin/create', [RoleController::class, 'createRole']);
         });
-
     });
 
-    
-    
     //////////////////////////////////////////////////////////
-    // Trainer Routes (Role-based Middleware)
+    // Trainer, Customer, Manager Routes
     //////////////////////////////////////////////////////////
-
-    Route::middleware(['role:admin|manager', 'log.activity'])->group(function () {
+    Route::middleware(['role:admin|manager|customer', 'log.activity'])->group(function () {
         Route::apiResource('training-programs', TrainingController::class);
-    });
-
-    //////////////////////////////////////////////////////////
-    // Trainee Routes (Role-based Middleware)
-    //////////////////////////////////////////////////////////
-
-    Route::middleware(['role:admin|manager', 'log.activity'])->group(function () {
-        Route::get('my-training', [TrainingController::class, 'index']);
-    });
-
-    //////////////////////////////////////////////////////////
-    // Customer Routes (Role-based Middleware)
-    //////////////////////////////////////////////////////////
-
-    Route::middleware(['role:admin|customer', 'log.activity'])->group(function () {
-        Route::get('my-training', [TrainingController::class, 'index']);
-    });
-
-    //////////////////////////////////////////////////////////
-    // Manager Routes (Role-based Middleware)
-    //////////////////////////////////////////////////////////
-
-    Route::middleware(['role:admin|manager', 'log.activity'])->group(function () {
         Route::get('my-training', [TrainingController::class, 'index']);
     });
 
@@ -142,7 +146,7 @@ Route::middleware(['auth:sanctum'])->group(function () {
     Route::delete('/enrollments/{id}', [EnrollmentController::class, 'destroy']);
     Route::post('/unenroll', [TrainingController::class, 'unenroll']);
 
-    // Service, Testimonial, and Wishlist Routes
+    // Service, Testimonial, Wishlist, Rating (full CRUD under auth)
     Route::apiResource('categories', CategoryController::class);
     Route::apiResource('blogs', BlogController::class);
     Route::apiResource('projects', ProjectController::class);
@@ -162,11 +166,3 @@ Route::middleware(['auth:sanctum'])->group(function () {
     Route::post('/orders/{id}/refund', [OrderController::class, 'issueRefund']);
     Route::get('/orders/user', [OrderController::class, 'getUserOrders']);
 });
-
-//////////////////////////////////////////////////////////////
-// Contact Routes (Public and Authenticated)
-//////////////////////////////////////////////////////////////
-
-Route::get('contacts', [ContactController::class, 'index']);
-Route::post('contacts', [ContactController::class, 'store']);
-Route::put('contacts/{id}/status', [ContactController::class, 'update']);
