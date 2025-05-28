@@ -72,7 +72,7 @@ class RegisterController extends Controller
         ]);
     
         // Assign 'customer' role
-        $user->assignRole('customer', 'sanctum');
+        $user->assignRole('customer');
     
         // Generate a personal access token
         $token = $user->createToken('Personal Access Token')->plainTextToken;
