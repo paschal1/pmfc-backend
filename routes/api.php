@@ -138,6 +138,7 @@ Route::middleware(['auth:sanctum'])->group(function () {
     Route::put('cart/{cartId}/items/{itemId}', [CartController::class, 'updateItemQuantity']);
     Route::delete('cart/{cartId}/items/{itemId}', [CartController::class, 'removeItemFromCart']);
     Route::post('cart/{cartId}/checkout', [CartController::class, 'checkout']);
+    Route::get('carts', [CartController::class, 'viewAllCarts']);
 
     // Enrollment Routes
     Route::get('/enrollments', [EnrollmentController::class, 'index']);

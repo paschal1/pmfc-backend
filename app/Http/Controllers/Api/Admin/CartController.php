@@ -187,4 +187,15 @@ public function checkout(Request $request, $cartId)
     ], 200);
 }
 
+public function viewAllCarts()
+{
+    // Retrieve all carts with their cart items and product details
+    $carts = Cart::with(['cartItems.product', 'user'])->get();
+
+    return response()->json([
+        'carts' => $carts
+    ]);
+}
+
+
 }
