@@ -80,4 +80,10 @@ class User extends Authenticatable
     {
         return $this->belongsToMany(Product::class, 'wishlists', 'user_id', 'product_id');
     }
+
+    public function guardName()
+{
+    return 'sanctum';
+}
+
 }
