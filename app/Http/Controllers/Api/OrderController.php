@@ -17,22 +17,29 @@ class OrderController extends Controller
     /**
      * Display a listing of orders (with optional filtering).
      */
-    public function index(Request $request)
-    {
-        $query = Order::query();
+  public function index()
+{
+    $user = auth()->user();
 
-        if ($request->has('status')) {
-            $query->status($request->status); // Using scopeStatus
-        }
-
-        if ($request->boolean('paid')) {
-            $query->paid(); // Using scopePaid
-        }
-
-        $orders = $query->with('user')->latest()->get();
-
-        return response()->json(['orders' => $orders], 200);
+    if ($user->hasRole('admin')) {
+        $orders = Order::with('user')->latest()->get();
+    } else {
+        $orders = Order::with('user')->where('user_id', $user->id)->latest()->get();
     }
+
+    return response()->json($orders);
+}
+
+public function show(Order $order)
+{
+    $user = auth()->user();
+
+    if ($user->hasRole('admin') || $order->user_id === $user->id) {
+        return response()->json($order);
+    }
+
+    return response()->json(['error' => 'Unauthorized'], 403);
+}
 
     /**
      * Place a new order from cart items.
