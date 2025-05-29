@@ -19,22 +19,33 @@ class ProjectController extends Controller
     /**
      * Store a newly created resource in storage.
      */
-    public function store(Request $request)
-    {
-        $validated = $request->validate([
-            'title' => 'required|string|max:255',
-            'description' => 'required|string',
-            'image' => 'nullable|image',
-        ]);
+   public function store(Request $request)
+{
+    $validated = $request->validate([
+        'title' => 'required|string|max:255',
+        'description' => 'required|string',
+        'image' => 'nullable|image|max:2048', // optional: add max 2MB
+    ]);
 
-        if ($request->hasFile('image')) {
-            $validated['image'] = $request->file('image')->store('projects');
-        }
-
-        Project::create($validated);
-
-        return response()->json(['message' => 'Project created successfully!'], 201);
+    if ($request->hasFile('image')) {
+        $path = $request->file('image')->store('projects');
+        $validated['image'] = $path;
     }
+
+    $project = Project::create($validated);
+
+    // If you want to return the **full image URL**, build it:
+    if ($project->image) {
+        $project->image_url = Storage::url($project->image);
+    } else {
+        $project->image_url = null;
+    }
+
+    return response()->json([
+        'message' => 'Project created successfully!',
+        'project' => $project
+    ], 201);
+}
 
     /**
      * Display the specified resource.
