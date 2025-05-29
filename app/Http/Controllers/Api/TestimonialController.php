@@ -25,12 +25,14 @@ class TestimonialController extends Controller
     {
         // Validate and submit a testimonial
         $validated = $request->validate([
-            'message' => 'required|string|max:500',
+            'name'=> 'required|string|max:255',
+            'review' => 'required|string|max:500',
         ]);
 
         $testimonial = Testimonial::create([
             'user_id' => auth()->id(),
-            'message' => $validated['message'],
+            'name' => $validated['name'],
+            'review' => $validated['review'],
         ]);
 
         return response()->json(['message' => 'Testimonial submitted for review'], 201);

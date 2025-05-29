@@ -8,7 +8,8 @@ class Testimonial extends Model
 {
     protected $fillable = [
         'user_id',
-        'message',
+        'name',
+        'review',
         'is_approved',
     ];
 

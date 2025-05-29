@@ -17,7 +17,7 @@ return new class extends Migration
             $table->foreign('student_id')->references('id')->on('students')->onDelete('cascade');
             $table->unsignedBigInteger('training_program_id');
             $table->foreign('training_program_id')->references('id')->on('training_programs')->onDelete('cascade');
-            $table->date(' enrollment_date');
+            $table->date('enrollment_date');
             $table->timestamps();
         });
     }
