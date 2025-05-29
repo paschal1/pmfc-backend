@@ -71,6 +71,9 @@ Route::get('whishlists/{whishlist}', [WishlistController::class, 'show']);
 Route::get('ratings', [RatingController::class, 'index']);
 Route::get('ratings/{rating}', [RatingController::class, 'show']);
 
+Route::get('training-programs', [TrainingController::class, 'index']);
+Route::get('training-programs/{training-program}', [RatingController::class, 'show']);
+
 // Contact Routes (public + auth)
 Route::get('contacts', [ContactController::class, 'index']);
 Route::post('contacts', [ContactController::class, 'store']);

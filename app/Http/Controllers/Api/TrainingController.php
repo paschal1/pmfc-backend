@@ -19,6 +19,22 @@ class TrainingController extends Controller
     }
 
     /**
+     * Display a specific training program.
+     */
+    public function show($id)
+    {
+        $trainingProgram = TrainingProgram::find($id);
+
+        if (!$trainingProgram) {
+            return response()->json(['message' => 'Training program not found'], 404);
+        }
+
+        return response()->json(['trainingProgram' => $trainingProgram], 200);
+    }
+    /**
+     * Display a listing of training programs for a specific student.
+     */
+    /**
      * Store a new training program.
      */
     public function store(Request $request)
