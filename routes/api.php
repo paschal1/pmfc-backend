@@ -73,6 +73,7 @@ Route::middleware(['auth:sanctum'])->group(function () {
     Route::get('/user', fn(Request $request) => $request->user());
     Route::get('/activeUse', [UserController::class, 'activeUse'])->name('activeUser');
     Route::get('/dashboard', [AnalyticsDashboardController::class, 'index'])->name('dashboard');
+    Route::get('/admin/dashboard-summary', [AnalyticsDashboardController::class, 'dashboardSummary']);
     Route::post('/place-order', [UserController::class, 'placeOrder']);
     Route::get('/update-profile', [UserController::class, 'updateProfile']);
 
