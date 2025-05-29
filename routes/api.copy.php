@@ -41,17 +41,38 @@ Route::post('/register', [RegisterController::class, 'register']);
 Route::post('/login', [AuthController::class, 'login'])->name('api.user.login');
 
 // Public-facing GET routes (index + show)
-Route::apiResource('products', ProductController::class)->only(['index', 'show']);
-Route::apiResource('orders', OrderController::class)->only(['index', 'show']);
-Route::apiResource('students', StudentController::class)->only(['index', 'show']);
-Route::apiResource('categories', CategoryController::class)->only(['index', 'show']);
-Route::apiResource('blogs', BlogController::class)->only(['index', 'show']);
-Route::apiResource('projects', ProjectController::class)->only(['index', 'show']);
-Route::apiResource('services', ServiceController::class)->only(['index', 'show']);
-Route::apiResource('testimonials', TestimonialController::class)->only(['index', 'show']);
-Route::apiResource('whishlists', WishlistController::class)->only(['index', 'show']);
-Route::apiResource('ratings', RatingController::class)->only(['index', 'show']);
-Route::apiResource('training-programs', TrainingController::class)->only(['index', 'show']);
+Route::get('products', [ProductController::class, 'index']);
+Route::get('products/{product}', [ProductController::class, 'show']);
+
+Route::get('orders', [OrderController::class, 'index']);
+Route::get('orders/{order}', [OrderController::class, 'show']);
+
+Route::get('students', [StudentController::class, 'index']);
+Route::get('students/{student}', [StudentController::class, 'show']);
+
+Route::get('categories', [CategoryController::class, 'index']);
+Route::get('categories/{category}', [CategoryController::class, 'show']);
+
+Route::get('blogs', [BlogController::class, 'index']);
+Route::get('blogs/{blog}', [BlogController::class, 'show']);
+
+Route::get('projects', [ProjectController::class, 'index']);
+Route::get('projects/{project}', [ProjectController::class, 'show']);
+
+Route::get('services', [ServiceController::class, 'index']);
+Route::get('services/{service}', [ServiceController::class, 'show']);
+
+Route::get('testimonials', [TestimonialController::class, 'index']);
+Route::get('testimonials/{testimonial}', [TestimonialController::class, 'show']);
+
+Route::get('whishlists', [WishlistController::class, 'index']);
+Route::get('whishlists/{whishlist}', [WishlistController::class, 'show']);
+
+Route::get('ratings', [RatingController::class, 'index']);
+Route::get('ratings/{rating}', [RatingController::class, 'show']);
+
+Route::get('training-programs', [TrainingController::class, 'index']);
+Route::get('training-programs/{training-program}', [RatingController::class, 'show']);
 
 // Contact Routes (public + auth)
 Route::get('contacts', [ContactController::class, 'index']);
@@ -75,10 +96,9 @@ Route::middleware(['auth:sanctum'])->group(function () {
     // Admin Routes
     //////////////////////////////////////////////////////////
     Route::middleware(['role:admin', 'log.activity'])->group(function () {
-        // Admin-managed resources (except index/show because public)
-        Route::apiResource('products', ProductController::class)->except(['index', 'show']);
-        Route::apiResource('orders', OrderController::class)->except(['index', 'show']);
-        Route::apiResource('students', StudentController::class)->except(['index', 'show']);
+        Route::apiResource('products', ProductController::class);
+        Route::apiResource('orders', OrderController::class);
+        Route::apiResource('students', StudentController::class);
 
         // Analytics Routes
         Route::get('/analytics/sales-reports', [AnalyticsDashboardController::class, 'salesReports']);
@@ -106,7 +126,7 @@ Route::middleware(['auth:sanctum'])->group(function () {
     // Trainer, Customer, Manager Routes
     //////////////////////////////////////////////////////////
     Route::middleware(['role:admin|manager|customer', 'log.activity'])->group(function () {
-        Route::apiResource('training-programs', TrainingController::class)->except(['index', 'show']);
+        Route::apiResource('training-programs', TrainingController::class);
         Route::get('my-training', [TrainingController::class, 'index']);
     });
 
@@ -130,14 +150,14 @@ Route::middleware(['auth:sanctum'])->group(function () {
     Route::delete('/enrollments/{id}', [EnrollmentController::class, 'destroy']);
     Route::post('/unenroll', [TrainingController::class, 'unenroll']);
 
-    // Full CRUD resources under auth
-    Route::apiResource('categories', CategoryController::class)->except(['index', 'show']);
-    Route::apiResource('blogs', BlogController::class)->except(['index', 'show']);
-    Route::apiResource('projects', ProjectController::class)->except(['index', 'show']);
-    Route::apiResource('services', ServiceController::class)->except(['index', 'show']);
-    Route::apiResource('testimonials', TestimonialController::class)->except(['index', 'show']);
-    Route::apiResource('whishlists', WishlistController::class)->except(['index', 'show']);
-    Route::apiResource('ratings', RatingController::class)->except(['index', 'show']);
+    // Service, Testimonial, Wishlist, Rating (full CRUD under auth)
+    Route::apiResource('categories', CategoryController::class);
+    Route::apiResource('blogs', BlogController::class);
+    Route::apiResource('projects', ProjectController::class);
+    Route::apiResource('services', ServiceController::class);
+    Route::apiResource('testimonials', TestimonialController::class);
+    Route::apiResource('whishlists', WishlistController::class);
+    Route::apiResource('ratings', RatingController::class);
 
     // Quote and Payment Routes
     Route::post('quotes', [QuoteController::class, 'store']);
