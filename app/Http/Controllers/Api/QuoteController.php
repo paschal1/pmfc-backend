@@ -11,6 +11,54 @@ use App\Models\Service;
 
 class QuoteController extends Controller
 {
+     // List all quotes
+    public function index()
+    {
+        $quotes = Quote::orderBy('created_at', 'desc')->get();
+
+        return response()->json([
+            'status' => 'success',
+            'data' => $quotes
+        ], 200);
+    }
+
+    // Show a specific quote
+    public function show($id)
+    {
+        $quote = Quote::find($id);
+
+        if (!$quote) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Quote not found'
+            ], 404);
+        }
+
+        return response()->json([
+            'status' => 'success',
+            'data' => $quote
+        ], 200);
+    }
+
+    // Delete a quote (admin only)
+    public function destroy($id)
+    {
+        $quote = Quote::find($id);
+
+        if (!$quote) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Quote not found'
+            ], 404);
+        }
+
+        $quote->delete();
+
+        return response()->json([
+            'status' => 'success',
+            'message' => 'Quote deleted successfully'
+        ], 200);
+    }
 //     public function store(Request $request)
 // {
 //     $validated = $request->validate([

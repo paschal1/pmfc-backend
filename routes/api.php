@@ -53,6 +53,11 @@ Route::apiResource('whishlists', WishlistController::class)->only(['index', 'sho
 Route::apiResource('ratings', RatingController::class)->only(['index', 'show']);
 Route::apiResource('training-programs', TrainingController::class)->only(['index', 'show']);
 
+
+Route::get('/quotes', [QuoteController::class, 'index']);         // GET all quotes
+Route::get('/quotes/{id}', [QuoteController::class, 'show']);     // GET one quote
+Route::delete('/quotes/{id}', [QuoteController::class, 'destroy']); 
+
 // Contact Routes (public + auth)
 Route::get('contacts', [ContactController::class, 'index']);
 Route::post('contacts', [ContactController::class, 'store']);

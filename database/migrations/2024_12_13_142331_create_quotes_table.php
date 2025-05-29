@@ -12,19 +12,24 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('quotes', function (Blueprint $table) {
-            $table->id();
-            $table->string('email')->unique();
-            $table->text('service_ids')->nullable();   
-            $table->text('service_titles')->nullable(); // Comma-separated service titles
-            $table->text('service_prices')->nullable(); // Comma-separated service prices
-            $table->json('details')->nullable();        // JSON of selected services
-            $table->json('quote')->nullable();          // JSON of full quote
-            $table->enum('status', ['pending', 'sent'])->default('pending');
-            $table->timestamps();
+    $table->id();
+    $table->string('email')->unique();
+    $table->string('name');
+    $table->string('phone');
+    $table->text('message');
+    $table->string('areasize');
+    $table->string('location');
+    $table->string('squarefeet');
+    $table->string('budget');
+    $table->text('service_ids');
+    $table->text('service_titles');
+    $table->text('service_prices');
+    $table->json('details');
+    $table->json('quote');
+    $table->string('status')->default('pending');
+    $table->timestamps();
+});
 
-            // Foreign key to services table
-            //$table->foreign('service_id')->references('id')->on('services')->onDelete('cascade');
-        });
     }
 
     /**

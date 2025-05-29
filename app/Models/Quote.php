@@ -9,13 +9,27 @@ class Quote extends Model
 {
     use HasFactory;
 
-    protected $fillable = [
-        'name',
-        'email',
-        'service_id',
-        'quoted_price',
-        'details',
-    ];
+  protected $fillable = [
+    'email',
+    'name',
+    'phone',
+    'message',
+    'areasize',
+    'location',
+    'squarefeet',
+    'budget',
+    'service_ids',
+    'service_titles',
+    'service_prices',
+    'details',
+    'quote',
+    'status',
+];
+
+protected $casts = [
+    'details' => 'array',
+    'quote' => 'array',
+];
 
     // Relationship with Service
     public function services()
