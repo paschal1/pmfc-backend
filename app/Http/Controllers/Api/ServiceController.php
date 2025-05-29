@@ -19,36 +19,45 @@ class ServiceController extends Controller
     /**
      * Store a newly created resource in storage.
      */
-    public function store(Request $request)
-    {
-        // Validate input fields
-        $validated = $request->validate([
-            'title' => 'required|string|max:255',
-            'description' => 'required|string',
-            'image1' => 'nullable|image|mimes:jpg,jpeg,png,gif|max:2048', // Added mime type and max file size
-            'image2' => 'nullable|image|mimes:jpg,jpeg,png,gif|max:2048', // Added mime type and max file size
-        ]);
-    
-        // Handle file upload for image1
-        if ($request->hasFile('image1')) {
-            $validated['image1'] = $request->file('image1')->store('Services', 'public'); // Store with public disk
-        }
-    
-        // Handle file upload for image2
-        if ($request->hasFile('image2')) {
-            $validated['image2'] = $request->file('image2')->store('Services', 'public'); // Store with public disk
-        }
-    
-        // Create a new Service record in the database
-        try {
-            Service::create($validated);
-        } catch (\Exception $e) {
-            return response()->json(['error' => 'Failed to create service: ' . $e->getMessage()], 500);
-        }
-    
-        // Return success response
-        return response()->json(['message' => 'Service created successfully!'], 201);
+   public function store(Request $request)
+{
+    // Validate input fields
+    $validated = $request->validate([
+        'title' => 'required|string|max:255',
+        'description' => 'required|string',
+        'price' => 'required|numeric|min:0',
+        'image1' => 'nullable|image|mimes:jpg,jpeg,png,gif|max:2048',
+        'image2' => 'nullable|image|mimes:jpg,jpeg,png,gif|max:2048',
+    ]);
+
+    // Handle file upload for image1
+    if ($request->hasFile('image1')) {
+        $validated['image1'] = $request->file('image1')->store('Services', 'public');
     }
+
+    // Handle file upload for image2
+    if ($request->hasFile('image2')) {
+        $validated['image2'] = $request->file('image2')->store('Services', 'public');
+    }
+
+    try {
+        // Create the service and capture the created model
+        $service = Service::create($validated);
+
+        // Return the saved service data using a resource (optional) or raw data
+        return response()->json([
+            'message' => 'Service created successfully!',
+            'data' => $service
+        ], 201);
+
+    } catch (\Exception $e) {
+        return response()->json([
+            'error' => 'Failed to create service',
+            'details' => $e->getMessage()
+        ], 500);
+    }
+}
+
     
 
     /**
