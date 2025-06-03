@@ -7,6 +7,7 @@ use Illuminate\Support\Str;
 use Illuminate\Http\Request;
 use App\Models\Category;
 use App\Models\Product;
+use Illuminate\Support\Facades\Storage;
 
 class CategoryController extends Controller
 {
@@ -66,28 +67,41 @@ class CategoryController extends Controller
     /**
      * Update the specified resource in storage.
      */
-    public function update(Request $request, string $id)
-    {
-       
-        try {
-            $category = Category::findOrFail($id);
-    
-            $request->validate([
-                'name' => 'required|string|max:255|unique:categories,name',
-                'image' => 'nullable|image|mimes:jpg,jpeg,png,webp,gif|max:2048',
-                'thumbnailimage' => 'nullable|image|mimes:jpg,jpeg,png,webp,gif|max:2048',
-            ]);
-    
+   public function update(Request $request, string $id)
+{
+    try {
+        $category = Category::findOrFail($id);
 
-
-        $category->update([
-            'name' => $request->input('name'),
-            'image' => $request->input('image'),
-            'thumbnailimage' => $request->input('thumbnailimage'),
-
+        $request->validate([
+            'name' => 'required|string|max:255|unique:categories,name,' . $id,
+            'image' => 'nullable|image|mimes:jpg,jpeg,png,webp,gif|max:2048',
+            'thumbnailimage' => 'nullable|image|mimes:jpg,jpeg,png,webp,gif|max:2048',
         ]);
 
-        return response()->json(['message' => 'Category updated successfully', 'category' => $category], 200);
+        $data = [
+            'name' => $request->input('name'),
+        ];
+
+        if ($request->hasFile('image')) {
+            $imagePath = $request->file('image')->store('categories', 'public');
+            $data['image'] = $imagePath;
+        }
+
+        if ($request->hasFile('thumbnailimage')) {
+            $thumbPath = $request->file('thumbnailimage')->store('categories/thumbnails', 'public');
+            $data['thumbnailimage'] = $thumbPath;
+        }
+
+        $category->update($data);
+
+        // Generate full URL
+        $category->image = $category->image ? Storage::url($category->image) : null;
+        $category->thumbnailimage = $category->thumbnailimage ? Storage::url($category->thumbnailimage) : null;
+
+        return response()->json([
+            'message' => 'Category updated successfully',
+            'category' => $category
+        ], 200);
     } catch (\Exception $e) {
         return response()->json([
             'status' => false,
@@ -95,7 +109,7 @@ class CategoryController extends Controller
             'error' => $e->getMessage(),
         ], 500);
     }
- }
+}
 
     /**
      * Remove the specified resource from storage.
