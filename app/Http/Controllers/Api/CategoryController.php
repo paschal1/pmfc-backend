@@ -73,10 +73,11 @@ class CategoryController extends Controller
         $category = Category::findOrFail($id);
 
         $request->validate([
-            'name' => 'required|string|max:255|unique:categories,name,' . $id,
-            'image' => 'nullable|image|mimes:jpg,jpeg,png,webp,gif|max:2048',
-            'thumbnailimage' => 'nullable|image|mimes:jpg,jpeg,png,webp,gif|max:2048',
-        ]);
+        'name' => 'required|string|max:255|unique:categories,name,' . $id,
+        'image' => 'nullable|image|mimes:jpg,jpeg,png,webp,gif|max:2048',
+        'thumbnailimage' => 'nullable|image|mimes:jpg,jpeg,png,webp,gif|max:2048',
+    ]);
+
 
         $data = [
             'name' => $request->input('name'),
