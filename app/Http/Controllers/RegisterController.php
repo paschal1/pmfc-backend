@@ -61,7 +61,9 @@ class RegisterController extends Controller
             'address' => ['required', 'string', 'max:255'],
             'password' => ['required', 'confirmed', 'min:8'],
         ]);
-    
+        
+        \Log::info('Registering email: ' . $request->email);
+
         // Create the user
         $user = User::create([
             'name' => $request->input('name'),

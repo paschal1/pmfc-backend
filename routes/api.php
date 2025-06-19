@@ -28,6 +28,7 @@ use App\Http\Controllers\Api\ProjectController;
 use App\Http\Controllers\Api\QuoteController;
 use App\Http\Controllers\Api\PaymentController;
 use App\Http\Controllers\Api\Admin\RolePermissionController;
+use App\Http\Controllers\Api\LocationCostController;
 use Spatie\Permission\Models\Role;
 
 //////////////////////////////////////////////////////////////
@@ -69,6 +70,8 @@ Route::put('contacts/{id}/status', [ContactController::class, 'update']);
 
 Route::middleware(['auth:sanctum'])->group(function () {
 
+     //location costs
+        Route::apiResource('location-costs', LocationCostController::class);
     // User Profile and Dashboard
     Route::get('/user', fn(Request $request) => $request->user());
     Route::get('/activeUse', [UserController::class, 'activeUse'])->name('activeUser');
@@ -91,6 +94,7 @@ Route::middleware(['auth:sanctum'])->group(function () {
         Route::get('/analytics/user-activity', [AnalyticsDashboardController::class, 'userActivity']);
         Route::get('/analytics/website-performance', [AnalyticsDashboardController::class, 'websitePerformance']);
 
+       
         // Permission and Role Routes
         Route::prefix('permissions')->group(function () {
             Route::post('/', [PermissionController::class, 'store']);
@@ -155,4 +159,22 @@ Route::middleware(['auth:sanctum'])->group(function () {
     Route::get('/orders/track/{trackingNumber}', [OrderController::class, 'trackOrder']);
     Route::post('/orders/{id}/refund', [OrderController::class, 'issueRefund']);
     Route::get('/orders/user', [OrderController::class, 'getUserOrders']);
+});
+
+Route::get('/test-password', function () {
+    $user = \App\Models\User::where('email', 'info@princem-fc.com')->first();
+    
+    if (!$user) {
+        return 'User not found';
+    }
+
+    return Hash::check('your-password-here', $user->password) ? 'Match' : 'No match';
+});
+
+Route::get('/cloudinary-test', function () {
+    dd([
+        'cloud_name' => env('CLOUDINARY_CLOUD_NAME'),
+        'api_key' => env('CLOUDINARY_API_KEY'),
+        'api_secret' => env('CLOUDINARY_API_SECRET'),
+    ]);
 });

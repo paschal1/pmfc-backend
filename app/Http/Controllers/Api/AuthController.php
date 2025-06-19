@@ -42,8 +42,8 @@ class AuthController extends Controller
             return response()->json($response, 200);
         }
                 //
-                public function login(Request $request)
-                {
+     public function login(Request $request)
+        {
                     $request->validate([
                         'email' => 'required|string|email',
                         'password' => 'required|string',
@@ -215,4 +215,43 @@ class AuthController extends Controller
 
         
     }
+// public function login(Request $request)
+// {
+//     $request->validate([
+//         'email' => 'required|email',
+//         'password' => 'required|string',
+//     ]);
+
+//     $user = \App\Models\User::where('email', $request->email)->first();
+
+//     if (!$user || !Hash::check($request->password, $user->password)) {
+//         return response()->json([
+//             'message' => 'Invalid login credentials.'
+//         ], 422);
+//     }
+
+//     // optional: update device token/platform
+//     $user->update([
+//         'device_token' => $request->device_token ?? $user->device_token,
+//         'device_platform' => $request->device_platform ?? $user->device_platform,
+//         'last_login_at' => now(),
+//     ]);
+
+//     // Log activity
+//     UserActivityService::log(
+//         $user->id,
+//         'login',
+//         $request->header('User-Agent'),
+//         $request->ip()
+//     );
+
+//     $token = $user->createToken('authToken')->plainTextToken;
+
+//     return response()->json([
+//         'message' => 'Logged in successfully',
+//         'user' => $user,
+//         'bearer_token' => $token,
+//         'cart' => Cart::firstOrCreate(['user_id' => $user->id, 'status' => 'active']),
+//     ]);
+// }
 

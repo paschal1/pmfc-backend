@@ -77,7 +77,7 @@
                 @if ($quote && $quote->details)
                     @foreach (json_decode($quote->details, true) as $detail)
                         <strong>Service:</strong> {{ $detail['title'] }}<br>
-                        <strong>Price:</strong> N{{ number_format($detail['price'], 2) }}<br>
+                        <strong>Price:</strong> N{{ number_format($detail['estimated_price'], 2) }}<br>
                         <br>
                     @endforeach
                     <strong>Total:</strong> N{{ number_format(json_decode($quote->quote, true)['total'] ?? 0, 2) }}
@@ -88,7 +88,7 @@
             <p>We look forward to serving you. Please feel free to contact us for more information.</p>
         </div>
         <div class="footer">
-            &copy; {{ date('Y') }} PMFC LTD. All Rights Reserved. | <a href="{{ url('PMFC LTD.com') }}">Visit Our Website</a>
+            &copy; {{ date('Y') }} PMFC LTD. All Rights Reserved. | <a href="{{ url('/') }}">Visit Our Website</a>
         </div>
     </div>
 </body>

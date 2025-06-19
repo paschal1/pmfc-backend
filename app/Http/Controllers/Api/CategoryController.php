@@ -5,124 +5,107 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use Illuminate\Support\Str;
 use Illuminate\Http\Request;
-use App\Models\Category;
-use App\Models\Product;
-use Illuminate\Support\Facades\Storage;
+use App\Models\Project;
+use CloudinaryLabs\CloudinaryLaravel\Facades\Cloudinary;
 
-class CategoryController extends Controller
+class ProjectController extends Controller
 {
-    /**
-     * Display a listing of the resource.
-     */
     public function index()
     {
-        $categories = Category::with('products')->get();
-        return response()->json($categories, 200);  
+        return response()->json(Project::latest()->get(), 200);
     }
 
-    /**
-     * Store a newly created resource in storage.
-     */
-   public function store(Request $request)
+    public function store(Request $request)
     {
-        $validatedData = $request->validate([
-            'name' => 'required|string|max:255|unique:categories,name',
+        $validated = $request->validate([
+            'title' => 'required|string|max:255',
+            'description' => 'required|string',
             'image' => 'nullable|image|mimes:jpg,jpeg,png,webp,gif|max:2048',
-            'thumbnailimage' => 'nullable|image|mimes:jpg,jpeg,png,webp,gif|max:2048',
         ]);
 
-        // Handle image upload
-        $imagePath = null;
+        $imageUrl = null;
         if ($request->hasFile('image')) {
-            $imagePath = $request->file('image')->store('categories/images', 'public');
+            $upload = Cloudinary::uploadApi()->upload($request->file('image')->getRealPath(), [
+                'folder' => 'pmfc/projects'
+            ]);
+            $imageUrl = $upload['secure_url'] ?? null;
         }
 
-        $thumbnailPath = null;
-        if ($request->hasFile('thumbnailimage')) {
-            $thumbnailPath = $request->file('thumbnailimage')->store('categories/thumbnails', 'public');
-        }
-
-        $category = Category::create([
-            'name' => $validatedData['name'],
-            'image' => $imagePath,
-            'thumbnailimage' => $thumbnailPath,
-            'slug' => Str::slug($validatedData['name']),
+        $project = Project::create([
+            'title' => $validated['title'],
+            'description' => $validated['description'],
+            'image' => $imageUrl,
+            'slug' => Str::slug($validated['title']),
         ]);
 
         return response()->json([
-            'message' => 'Category created successfully',
-            'category' => $category
+            'message' => 'Project created successfully!',
+            'project' => $project
         ], 201);
     }
 
-    /**
-     * Display the specified resource.
-     */
-    public function show(Category $category)
+    public function show(string $id)
     {
-        $category->load('products'); // Eager load related products
-        return response()->json($category, 200);
+        $project = Project::findOrFail($id);
+        return response()->json($project, 200);
     }
 
-    /**
-     * Update the specified resource in storage.
-     */
-   public function update(Request $request, string $id)
-{
-    try {
-        $category = Category::findOrFail($id);
-
-        $request->validate([
-        'name' => 'required|string|max:255|unique:categories,name,' . $id,
-        'image' => 'nullable|image|mimes:jpg,jpeg,png,webp,gif|max:2048',
-        'thumbnailimage' => 'nullable|image|mimes:jpg,jpeg,png,webp,gif|max:2048',
-    ]);
-
-
-        $data = [
-            'name' => $request->input('name'),
-        ];
-
-        if ($request->hasFile('image')) {
-            $imagePath = $request->file('image')->store('categories', 'public');
-            $data['image'] = $imagePath;
-        }
-
-        if ($request->hasFile('thumbnailimage')) {
-            $thumbPath = $request->file('thumbnailimage')->store('categories/thumbnails', 'public');
-            $data['thumbnailimage'] = $thumbPath;
-        }
-
-        $category->update($data);
-
-        // Generate full URL
-        $category->image = $category->image ? Storage::url($category->image) : null;
-        $category->thumbnailimage = $category->thumbnailimage ? Storage::url($category->thumbnailimage) : null;
-
-        return response()->json([
-            'message' => 'Category updated successfully',
-            'category' => $category
-        ], 200);
-    } catch (\Exception $e) {
-        return response()->json([
-            'status' => false,
-            'message' => 'An error occurred while updating the Category.',
-            'error' => $e->getMessage(),
-        ], 500);
-    }
-}
-
-    /**
-     * Remove the specified resource from storage.
-     */
-    public function destroy(Category $category)
+    public function update(Request $request, string $id)
     {
-        if ($category->products()->exists()) {
-            return response()->json(['message' => 'Cannot delete category with associated products'], 400);
-        }
+        try {
+            $project = Project::findOrFail($id);
 
-        $category->delete();
-        return response()->json(['message' => 'Category deleted successfully'], 200);
+            $validated = $request->validate([
+                'title' => 'nullable|string|max:255',
+                'description' => 'nullable|string',
+                'image' => 'nullable|image|mimes:jpg,jpeg,png,webp,gif|max:2048',
+                'status' => 'nullable|in:ongoing,completed',
+            ]);
+
+            $data = [];
+
+            if ($request->filled('title')) {
+                $data['title'] = $validated['title'];
+                $data['slug'] = Str::slug($validated['title']);
+            }
+
+            if ($request->filled('description')) {
+                $data['description'] = $validated['description'];
+            }
+
+            if (isset($validated['status'])) {
+                $data['status'] = $validated['status'];
+            }
+
+            if ($request->hasFile('image')) {
+                $upload = Cloudinary::uploadApi()->upload($request->file('image')->getRealPath(), [
+                    'folder' => 'pmfc/projects'
+                ]);
+                $data['image'] = $upload['secure_url'] ?? null;
+            }
+
+            if (!empty($data)) {
+                $project->update($data);
+            }
+
+            return response()->json([
+                'message' => 'Project updated successfully!',
+                'project' => $project->fresh()
+            ], 200);
+
+        } catch (\Exception $e) {
+            return response()->json([
+                'message' => 'An error occurred while updating the project.',
+                'error' => $e->getMessage(),
+            ], 500);
+        }
     }
-    
+
+    public function destroy(string $id)
+    {
+        $project = Project::findOrFail($id);
+        $project->delete();
+
+        return response()->json(['message' => 'Project deleted successfully!'], 200);
+    }
 }

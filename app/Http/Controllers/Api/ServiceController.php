@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use App\Models\Service;
+use CloudinaryLabs\CloudinaryLaravel\Facades\Cloudinary;
 
 class ServiceController extends Controller
 {
@@ -19,46 +20,45 @@ class ServiceController extends Controller
     /**
      * Store a newly created resource in storage.
      */
-   public function store(Request $request)
-{
-    // Validate input fields
-    $validated = $request->validate([
-        'title' => 'required|string|max:255',
-        'description' => 'required|string',
-        'price' => 'required|numeric|min:0',
-        'image1' => 'nullable|image|mimes:jpg,jpeg,png,gif|max:2048',
-        'image2' => 'nullable|image|mimes:jpg,jpeg,png,gif|max:2048',
-    ]);
+    public function store(Request $request)
+    {
+        $validated = $request->validate([
+            'title' => 'required|string|max:255',
+            'description' => 'required|string',
+            'price' => 'required|numeric|min:0',
+            'image1' => 'nullable|image|mimes:jpg,jpeg,png,gif|max:2048',
+            'image2' => 'nullable|image|mimes:jpg,jpeg,png,gif|max:2048',
+        ]);
 
-    // Handle file upload for image1
-    if ($request->hasFile('image1')) {
-        $validated['image1'] = $request->file('image1')->store('Services', 'public');
+        // Upload images to Cloudinary if present
+                    if ($request->hasFile('image1')) {
+                    $validated['image1'] = Cloudinary::uploadApi()
+                        ->upload($request->file('image1')->getRealPath())['secure_url'];
+                }
+
+                if ($request->hasFile('image2')) {
+                    $validated['image2'] = Cloudinary::uploadApi()
+                        ->upload($request->file('image2')->getRealPath())['secure_url'];
+                }
+
+
+        // dd($validated);
+
+        try {
+            $service = Service::create($validated);
+
+            return response()->json([
+                'message' => 'Service created successfully!',
+                'data' => $service,
+            ], 201);
+
+        } catch (\Exception $e) {
+            return response()->json([
+                'error' => 'Failed to create service',
+                'details' => $e->getMessage(),
+            ], 500);
+        }
     }
-
-    // Handle file upload for image2
-    if ($request->hasFile('image2')) {
-        $validated['image2'] = $request->file('image2')->store('Services', 'public');
-    }
-
-    try {
-        // Create the service and capture the created model
-        $service = Service::create($validated);
-
-        // Return the saved service data using a resource (optional) or raw data
-        return response()->json([
-            'message' => 'Service created successfully!',
-            'data' => $service
-        ], 201);
-
-    } catch (\Exception $e) {
-        return response()->json([
-            'error' => 'Failed to create service',
-            'details' => $e->getMessage()
-        ], 500);
-    }
-}
-
-    
 
     /**
      * Display the specified resource.
@@ -71,31 +71,54 @@ class ServiceController extends Controller
     /**
      * Update the specified resource in storage.
      */
-    public function update(Request $request, string $id)
-    {
-        $Service = Service::findOrFail($id);
+ public function update(Request $request, string $id)
+{
+    $service = Service::findOrFail($id);
 
-        $validated = $request->validate([
-            'title' => 'required|string|max:255',
-            'description' => 'required|string',
-            'image1' => 'nullable|image',
-            'image2' => 'nullable|image',
-        ]);
+    $validated = $request->validate([
+        'title' => 'nullable|string|max:255',
+        'description' => 'nullable|string',
+        'price' => 'nullable|numeric|min:0',
+        'image1' => 'nullable|image|mimes:jpg,jpeg,png,gif|max:2048',
+        'image2' => 'nullable|image|mimes:jpg,jpeg,png,gif|max:2048',
+    ]);
 
-        if ($request->hasFile('image1')) {
-            $validated['image1'] = $request->file('image1')->store('Services');
-        }
+    $dataToUpdate = [];
 
-        
-        if ($request->hasFile('image2')) {
-            $validated['image2'] = $request->file('image2')->store('Services');
-        }
-
-
-        $Service->update($validated);
-
-        return response()->json(['message' => 'Service updated successfully!']);
+    if ($request->filled('title')) {
+        $dataToUpdate['title'] = $validated['title'];
     }
+
+    if ($request->filled('description')) {
+        $dataToUpdate['description'] = $validated['description'];
+    }
+
+    if ($request->filled('price')) {
+        $dataToUpdate['price'] = $validated['price'];
+    }
+
+    if ($request->hasFile('image1')) {
+        $upload1 = Cloudinary::uploadApi()->upload(
+            $request->file('image1')->getRealPath()
+        );
+        $dataToUpdate['image1'] = $upload1['secure_url'] ?? null;
+    }
+
+    if ($request->hasFile('image2')) {
+        $upload2 = Cloudinary::uploadApi()->upload(
+            $request->file('image2')->getRealPath()
+        );
+        $dataToUpdate['image2'] = $upload2['secure_url'] ?? null;
+    }
+
+    $service->update($dataToUpdate);
+
+    return response()->json([
+        'message' => 'Service updated successfully!',
+        'data' => $service->fresh(),
+    ]);
+}
+
 
     /**
      * Remove the specified resource from storage.
