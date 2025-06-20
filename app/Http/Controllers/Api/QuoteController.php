@@ -111,7 +111,7 @@ class QuoteController extends Controller
                 'title' => $service->title,
                 'min_price' => $service->min_price,
                 'max_price' => $service->max_price,
-                'main_price' => $service->main_price,
+                'main_price' => $service->price,
                 'estimated_price' => $finalPrice,
             ];
 

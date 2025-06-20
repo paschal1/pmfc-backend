@@ -13,6 +13,8 @@ class Service extends Model
         'title',
         'description',
         'price',
+        'min_price',
+        'max_price',
         'image1',
         'image2',
        
