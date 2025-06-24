@@ -3,89 +3,109 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use Illuminate\Support\Str;
 use Illuminate\Http\Request;
 use App\Models\Project;
-use Illuminate\Support\Facades\Storage;
+use CloudinaryLabs\CloudinaryLaravel\Facades\Cloudinary;
 
 class ProjectController extends Controller
 {
-    /**
-     * Display a listing of the resource.
-     */
     public function index()
     {
-        return Project::latest()->get();
+        return response()->json(Project::latest()->get(), 200);
     }
 
-    /**
-     * Store a newly created resource in storage.
-     */
-   public function store(Request $request)
-{
-    $validated = $request->validate([
-        'title' => 'required|string|max:255',
-        'description' => 'required|string',
-        'image' => 'nullable|image|max:2048', // optional: add max 2MB
-    ]);
-
-    if ($request->hasFile('image')) {
-        $path = $request->file('image')->store('projects');
-        $validated['image'] = $path;
-    }
-
-    $project = Project::create($validated);
-
-    // If you want to return the **full image URL**, build it:
-    if ($project->image) {
-        $project->image_url = Storage::url($project->image);
-    } else {
-        $project->image_url = null;
-    }
-
-    return response()->json([
-        'message' => 'Project created successfully!',
-        'project' => $project
-    ], 201);
-}
-
-    /**
-     * Display the specified resource.
-     */
-    public function show(string $id)
+    public function store(Request $request)
     {
-        return Project::findOrFail($id);
-    }
-
-    /**
-     * Update the specified resource in storage.
-     */
-    public function update(Request $request, string $id)
-    {
-        $project = Project::findOrFail($id);
-
         $validated = $request->validate([
             'title' => 'required|string|max:255',
             'description' => 'required|string',
-            'image' => 'nullable|image',
-            'status' => 'nullable|in:ongoing,completed',
+            'image' => 'nullable|image|mimes:jpg,jpeg,png,webp,gif|max:2048',
         ]);
 
+        $imageUrl = null;
         if ($request->hasFile('image')) {
-            $validated['image'] = $request->file('image')->store('projects');
+            $upload = Cloudinary::uploadApi()->upload($request->file('image')->getRealPath(), [
+                'folder' => 'pmfc/projects'
+            ]);
+            $imageUrl = $upload['secure_url'] ?? null;
         }
 
-        $project->update($validated);
+        $project = Project::create([
+            'title' => $validated['title'],
+            'description' => $validated['description'],
+            'image' => $imageUrl,
+            'slug' => Str::slug($validated['title']),
+        ]);
 
-        return response()->json(['message' => 'Project updated successfully!']);
+        return response()->json([
+            'message' => 'Project created successfully!',
+            'project' => $project
+        ], 201);
     }
 
-    /**
-     * Remove the specified resource from storage.
-     */
+    public function show(string $id)
+    {
+        $project = Project::findOrFail($id);
+        return response()->json($project, 200);
+    }
+
+    public function update(Request $request, string $id)
+    {
+        try {
+            $project = Project::findOrFail($id);
+
+            $validated = $request->validate([
+                'title' => 'nullable|string|max:255',
+                'description' => 'nullable|string',
+                'image' => 'nullable|image|mimes:jpg,jpeg,png,webp,gif|max:2048',
+                'status' => 'nullable|in:ongoing,completed',
+            ]);
+
+            $data = [];
+
+            if ($request->filled('title')) {
+                $data['title'] = $validated['title'];
+                $data['slug'] = Str::slug($validated['title']);
+            }
+
+            if ($request->filled('description')) {
+                $data['description'] = $validated['description'];
+            }
+
+            if (isset($validated['status'])) {
+                $data['status'] = $validated['status'];
+            }
+
+            if ($request->hasFile('image')) {
+                $upload = Cloudinary::uploadApi()->upload($request->file('image')->getRealPath(), [
+                    'folder' => 'pmfc/projects'
+                ]);
+                $data['image'] = $upload['secure_url'] ?? null;
+            }
+
+            if (!empty($data)) {
+                $project->update($data);
+            }
+
+            return response()->json([
+                'message' => 'Project updated successfully!',
+                'project' => $project->fresh()
+            ], 200);
+
+        } catch (\Exception $e) {
+            return response()->json([
+                'message' => 'An error occurred while updating the project.',
+                'error' => $e->getMessage(),
+            ], 500);
+        }
+    }
+
     public function destroy(string $id)
     {
-        Project::destroy($id);
+        $project = Project::findOrFail($id);
+        $project->delete();
 
-        return response()->json(['message' => 'Project deleted successfully!']);
+        return response()->json(['message' => 'Project deleted successfully!'], 200);
     }
 }
