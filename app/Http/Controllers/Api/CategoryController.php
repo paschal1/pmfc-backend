@@ -60,51 +60,56 @@ class CategoryController extends Controller
         return response()->json($category);
     }
 
-    public function update(Request $request, string $id)
-    {
-        try {
-            $category = Category::findOrFail($id);
+   public function update(Request $request, string $id)
+{
+    try {
+        $category = Category::findOrFail($id);
 
-            $validated = $request->validate([
-                'name' => 'required|string|max:255|unique:categories,name,' . $id,
-                'image' => 'nullable|image|mimes:jpg,jpeg,png,webp,gif|max:2048',
-                'thumbnailImage' => 'nullable|image|mimes:jpg,jpeg,png,webp,gif|max:2048',
-            ]);
+        $validator = Validator::make($request->all(), [
+            'name' => 'sometimes|required|string|max:255',
+            'image' => 'sometimes|image|mimes:jpg,jpeg,png,webp,gif|max:2048',
+            'thumbnailImage' => 'sometimes|image|mimes:jpg,jpeg,png,webp,gif|max:2048',
+        ]);
 
-            $data = [
-                'name' => $validated['name'],
-                'slug' => Str::slug($validated['name']),
-            ];
-
-            if ($request->hasFile('image')) {
-                $upload = Cloudinary::uploadApi()->upload($request->file('image')->getRealPath(), [
-                    'folder' => 'pmfc/categories'
-                ]);
-                $data['image'] = $upload['secure_url'] ?? null;
-            }
-
-            if ($request->hasFile('thumbnailImage')) {
-                $upload = Cloudinary::uploadApi()->upload($request->file('thumbnailImage')->getRealPath(), [
-                    'folder' => 'pmfc/categories'
-                ]);
-                $data['thumbnailimage'] = $upload['secure_url'] ?? null;
-            }
-
-            $category->update($data);
-
-            return response()->json([
-                'status' => true,
-                'message' => 'Category updated successfully!',
-                'data' => $category->fresh(),
-            ]);
-        } catch (\Exception $e) {
+        if ($validator->fails()) {
             return response()->json([
                 'status' => false,
-                'message' => 'Error updating category',
-                'error' => $e->getMessage(),
-            ], 500);
+                'message' => 'Validation failed',
+                'errors' => $validator->errors()
+            ], 422);
         }
+
+        $data = $validator->validated();
+
+        if ($request->hasFile('image')) {
+            $upload = Cloudinary::uploadApi()->upload($request->file('image')->getRealPath(), [
+                'folder' => 'pmfc/categories'
+            ]);
+            $data['image'] = $upload['secure_url'] ?? null;
+        }
+
+        if ($request->hasFile('thumbnailImage')) {
+            $upload = Cloudinary::uploadApi()->upload($request->file('thumbnailImage')->getRealPath(), [
+                'folder' => 'pmfc/categories'
+            ]);
+            $data['thumbnailimage'] = $upload['secure_url'] ?? null;
+        }
+
+        $category->update($data);
+
+        return response()->json([
+            'status' => true,
+            'message' => 'Category updated successfully!',
+            'data' => $category->fresh(),
+        ]);
+    } catch (\Exception $e) {
+        return response()->json([
+            'status' => false,
+            'message' => 'Error updating category',
+            'error' => $e->getMessage()
+        ], 500);
     }
+}
 
     public function destroy(string $id)
     {
