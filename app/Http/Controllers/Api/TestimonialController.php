@@ -58,6 +58,8 @@ class TestimonialController extends Controller
         $validated = $request->validate([
            // 'message' => 'required|string|max:500',
             'is_approved' => 'nullable|boolean',
+            'name' => 'sometimes|string|max:255',
+            'review' => 'sometimes|string|max:500',
         ]);
 
         $testimonial = Testimonial::findOrFail($id);
