@@ -21,6 +21,7 @@ class ProjectController extends Controller
             'title' => 'required|string|max:255',
             'description' => 'required|string',
             'image' => 'nullable|image|mimes:jpg,jpeg,png,webp,gif|max:2048',
+            'status' => 'nullable|in:ongoing,completed',
         ]);
 
         $imageUrl = null;
@@ -36,6 +37,7 @@ class ProjectController extends Controller
             'description' => $validated['description'],
             'image' => $imageUrl,
             'slug' => Str::slug($validated['title']),
+            'status' => $validated['status'] ?? 'ongoing',
         ]);
 
         return response()->json([
