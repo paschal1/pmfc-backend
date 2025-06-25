@@ -46,7 +46,7 @@ class CategoryController extends Controller
             'name' => $validated['name'],
             'slug' => Str::slug($validated['name']),
             'image' => $imageUrl,
-            'thumbnailimage' => $thumbUrl,
+            'thumbnailImage' => $thumbUrl,
         ]);
 
         return response()->json([
@@ -94,7 +94,7 @@ class CategoryController extends Controller
             $upload = Cloudinary::uploadApi()->upload($request->file('thumbnailImage')->getRealPath(), [
                 'folder' => 'pmfc/categories'
             ]);
-            $data['thumbnailimage'] = $upload['secure_url'] ?? null;
+            $data['thumbnailImage'] = $upload['secure_url'] ?? null;
         }
 
         $category->update($data);
