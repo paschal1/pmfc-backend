@@ -52,6 +52,7 @@ class ServiceController extends Controller
             'message' => 'Service retrieved.',
             'data' => $service,
         ]);
+    
     }
 
     public function update(UpdateServiceRequest $request, string $id): JsonResponse

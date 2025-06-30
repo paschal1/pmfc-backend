@@ -19,7 +19,10 @@ class ContactController extends Controller
      */
     public function index()
     {
-        return Contact::latest()->get();
+        // Fetch the latest contacts from the database
+        // You can modify the query to include pagination or filtering as needed
+        $contacts = Contact::latest()->paginate(10);
+        return $this->respondWithData($contacts);
     }
 
     /**
@@ -72,7 +75,8 @@ class ContactController extends Controller
             return response()->json(['message' => 'Contact not found'], 404);
         }
 
-        return response()->json(['EContact' => $Contact], 200);
+        // return response()->json(['EContact' => $Contact], 200);
+        return $this->respondWithData($Contact);
     }
 
     /**

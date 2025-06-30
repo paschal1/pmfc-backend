@@ -17,7 +17,12 @@ class BlogController extends Controller
      */
     public function index()
     {
-        return Blog::latest()->get();
+        $blogs = Blog::with('author')->latest()->paginate(10);
+        return response()->json([
+            'message' => 'Blogs retrieved successfully.',
+            'data' => $blogs,
+        ]);
+
     }
 
     /**
@@ -82,7 +87,8 @@ class BlogController extends Controller
      */
     public function show(string $id)
     {
-        return Blog::findOrFail($id);
+        $blog = Blog::with('author')->find($id);
+        return $this->respondWithData($blog);
     }
 
     /**

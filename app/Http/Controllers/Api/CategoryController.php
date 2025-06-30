@@ -12,18 +12,19 @@ use Illuminate\Support\Facades\Validator;
 
 class CategoryController extends Controller
 {
-    public function index()
-    {
-        $categories = Category::with('products')->paginate(16);
-        return response()->json($categories);
-    }
+        public function index() 
+        {
+            $categories = Category::with('products')->paginate(16);
+            return $this->respondWithData($categories);
+        }
+
 
     public function store(Request $request)
     {
         $validated = $request->validate([
             'name' => 'required|string|max:255|unique:categories,name',
             'image' => 'nullable|image|mimes:jpg,jpeg,png,webp,gif|max:2048',
-            'thumbnailImage' => 'nullable|image|mimes:jpg,jpeg,png,webp,gif|max:2048',
+            'thumbnailimage' => 'nullable|image|mimes:jpg,jpeg,png,webp,gif|max:2048',
         ]);
 
         $imageUrl = null;
@@ -35,8 +36,8 @@ class CategoryController extends Controller
         }
 
         $thumbUrl = null;
-        if ($request->hasFile('thumbnailImage')) {
-            $upload = Cloudinary::uploadApi()->upload($request->file('thumbnailImage')->getRealPath(), [
+        if ($request->hasFile('thumbnailimage')) {
+            $upload = Cloudinary::uploadApi()->upload($request->file('thumbnailimage')->getRealPath(), [
                 'folder' => 'pmfc/categories'
             ]);
             $thumbUrl = $upload['secure_url'] ?? null;
@@ -46,7 +47,7 @@ class CategoryController extends Controller
             'name' => $validated['name'],
             'slug' => Str::slug($validated['name']),
             'image' => $imageUrl,
-            'thumbnailImage' => $thumbUrl,
+            'thumbnailimage' => $thumbUrl,
         ]);
 
         return response()->json([
@@ -59,7 +60,7 @@ class CategoryController extends Controller
     public function show(string $id)
     {
         $category = Category::with('products')->findOrFail($id);
-        return response()->json($category);
+        $this->respondWithData($category);
     }
 
    public function update(Request $request, string $id)
@@ -70,7 +71,7 @@ class CategoryController extends Controller
         $validator = Validator::make($request->all(), [
             'name' => 'sometimes|required|string|max:255',
             'image' => 'sometimes|image|mimes:jpg,jpeg,png,webp,gif|max:2048',
-            'thumbnailImage' => 'sometimes|image|mimes:jpg,jpeg,png,webp,gif|max:2048',
+            'thumbnailimage' => 'sometimes|image|mimes:jpg,jpeg,png,webp,gif|max:2048',
         ]);
 
         if ($validator->fails()) {
@@ -90,11 +91,11 @@ class CategoryController extends Controller
             $data['image'] = $upload['secure_url'] ?? null;
         }
 
-        if ($request->hasFile('thumbnailImage')) {
-            $upload = Cloudinary::uploadApi()->upload($request->file('thumbnailImage')->getRealPath(), [
+        if ($request->hasFile('thumbnailimage')) {
+            $upload = Cloudinary::uploadApi()->upload($request->file('thumbnailimage')->getRealPath(), [
                 'folder' => 'pmfc/categories'
             ]);
-            $data['thumbnailImage'] = $upload['secure_url'] ?? null;
+            $data['thumbnailimage'] = $upload['secure_url'] ?? null;
         }
 
         $category->update($data);
