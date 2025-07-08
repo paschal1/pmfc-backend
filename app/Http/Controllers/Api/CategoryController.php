@@ -12,11 +12,11 @@ use Illuminate\Support\Facades\Validator;
 
 class CategoryController extends Controller
 {
-        public function index() 
-        {
-            $categories = Category::with('products')->paginate(16);
-            return $this->respondWithData($categories);
-        }
+       public function index()
+{
+    $categories = Category::with('products')->paginate(16);
+    return $this->respondWithData($categories);
+}
 
 
     public function store(Request $request)
@@ -57,11 +57,12 @@ class CategoryController extends Controller
         ], 201);
     }
 
-    public function show(string $id)
-    {
-        $category = Category::with('products')->findOrFail($id);
-        $this->respondWithData($category);
-    }
+  public function show(string $id)
+{
+    $category = Category::with('products')->findOrFail($id);
+    return $this->respondWithData($category); 
+}
+
 
    public function update(Request $request, string $id)
 {

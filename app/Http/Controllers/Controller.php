@@ -12,10 +12,16 @@ class Controller extends BaseController
 {
     use AuthorizesRequests, DispatchesJobs, ValidatesRequests;
 
-    protected function respondWithData($data)
-    {
-        return response()->json([
-            'data' => $data
-        ]);
+   protected function respondWithData($data)
+{
+    // Avoid wrapping paginator
+    if ($data instanceof \Illuminate\Pagination\AbstractPaginator) {
+        return response()->json($data);
     }
+
+    return response()->json([
+        'data' => $data
+    ]);
+}
+
 }
