@@ -22,7 +22,7 @@ class BlogController extends Controller
             'message' => 'Blogs retrieved successfully.',
             'data' => $blogs,
         ]);
-
+//working
     }
 
     /**
