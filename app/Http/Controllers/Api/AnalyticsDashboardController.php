@@ -6,10 +6,13 @@ use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use App\Utility\SalesReportService;
 use App\Utility\UserActivityService;
+use App\Models\Order;
+use App\Models\Product;
+use App\Models\User;
+use App\Models\Category;
 
 class AnalyticsDashboardController extends Controller
 {
-   
     protected $salesReportService;
     protected $userActivityService;
 
@@ -28,6 +31,7 @@ class AnalyticsDashboardController extends Controller
             $salesData = $this->salesReportService->getSalesReports();
             return response()->json(['data' => $salesData], 200);
         } catch (\Exception $e) {
+            \Log::error('Sales Reports Error: ' . $e->getMessage());
             return response()->json(['error' => 'Unable to fetch sales reports.'], 500);
         }
     }
@@ -41,6 +45,7 @@ class AnalyticsDashboardController extends Controller
             $activityData = $this->userActivityService->getUserActivityStats();
             return response()->json(['data' => $activityData], 200);
         } catch (\Exception $e) {
+            \Log::error('User Activity Error: ' . $e->getMessage());
             return response()->json(['error' => 'Unable to fetch user activity statistics.'], 500);
         }
     }
@@ -59,88 +64,95 @@ class AnalyticsDashboardController extends Controller
             ];
             return response()->json(['data' => $performanceData], 200);
         } catch (\Exception $e) {
+            \Log::error('Website Performance Error: ' . $e->getMessage());
             return response()->json(['error' => 'Unable to fetch website performance statistics.'], 500);
         }
     }
 
-public function dashboardSummary()
-{
-    // Total revenue: sum of all paid orders
-    $totalRevenue = \App\Models\Order::where('payment_status', 'Paid')->sum('total_price');
+    /**
+     * Get complete dashboard summary with all metrics.
+     */
+    public function dashboardSummary()
+    {
+        try {
+            // Total revenue: sum of all paid orders
+            $totalRevenue = Order::where('payment_status', 'Paid')->sum('total_price');
 
-    // Total orders
-    $totalOrders = \App\Models\Order::count();
+            // Total orders
+            $totalOrders = Order::count();
 
-    // Total products
-    $totalProducts = \App\Models\Product::count();
+            // Total products
+            $totalProducts = Product::count();
 
-    // Total customers
-    $totalCustomers = \App\Models\User::count();
+            // Total customers
+            $totalCustomers = User::count();
 
-    // Total categories count
-    $totalCategories = \App\Models\Category::count();
+            // Total categories count
+            $totalCategories = Category::count();
 
-    // Get all categories with name and image
-    $categories = \App\Models\Category::select('id', 'name', 'image')->get();
+            // Get all categories with name and image
+            $categories = Category::select('id', 'name', 'image')->get();
 
-    // Best-selling products (top 5 based on order items count)
-    $bestSellingProducts = \App\Models\Product::with(['category', 'orderItems'])
-        ->withCount('orderItems')
-        ->orderByDesc('order_items_count')
-        ->take(5)
-        ->get()
-        ->map(function ($product) {
-            $amount = $product->price * $product->order_items_count;
-            return [
-                'id' => $product->id,
-                'image' => $product->image, // assuming 'image' column exists
-                'name' => $product->name,
-                'price' => $product->price,
-                'orders' => $product->order_items_count,
-                'stock' => $product->stock, // assuming 'stock' column exists
-                'amount' => $amount,
-                'date' => $product->updated_at->toDateTimeString(),
-                'category' => $product->category ? $product->category->name : null,
-            ];
-        });
+            // Best-selling products (top 5 based on order items count)
+            $bestSellingProducts = Product::with(['category', 'orderItems'])
+                ->withCount('orderItems')
+                ->orderByDesc('order_items_count')
+                ->take(5)
+                ->get()
+                ->map(function ($product) {
+                    $amount = $product->price * $product->order_items_count;
+                    return [
+                        'id' => $product->id,
+                        'image' => $product->image,
+                        'name' => $product->name,
+                        'price' => (float) $product->price,
+                        'orders' => $product->order_items_count,
+                        'stock' => $product->stock,
+                        'amount' => (float) $amount,
+                        'date' => $product->updated_at->toDateTimeString(),
+                        'category' => $product->category ? $product->category->name : null,
+                    ];
+                });
 
-    // Recent orders (latest 5) with product details
-    $recentOrders = \App\Models\Order::with('orderItems.product')
-        ->latest()
-        ->take(5)
-        ->get()
-        ->map(function ($order) {
-            return $order->orderItems->map(function ($item) use ($order) {
-                $product = $item->product;
-                $amount = $product->price * $item->quantity;
-                return [
-                    'order_id' => $order->id,
-                    'product_id' => $product->id,
-                    'image' => $product->image, // assuming 'image' column exists
-                    'name' => $product->name,
-                    'price' => $product->price,
-                    'orders' => $item->quantity,
-                    'stock' => $product->stock, // assuming 'stock' column exists
-                    'amount' => $amount,
-                    'date' => $order->created_at->toDateTimeString(),
-                ];
-            });
-        })
-        ->flatten(1);
+            // Recent orders (latest 5) with product details
+            $recentOrders = Order::with('orderItems.product')
+                ->latest()
+                ->take(5)
+                ->get()
+                ->map(function ($order) {
+                    return $order->orderItems->map(function ($item) use ($order) {
+                        $product = $item->product;
+                        $amount = $product->price * $item->quantity;
+                        return [
+                            'order_id' => $order->id,
+                            'product_id' => $product->id,
+                            'image' => $product->image,
+                            'name' => $product->name,
+                            'price' => (float) $product->price,
+                            'orders' => $item->quantity,
+                            'stock' => $product->stock,
+                            'amount' => (float) $amount,
+                            'date' => $order->created_at->toDateTimeString(),
+                        ];
+                    });
+                })
+                ->flatten(1);
 
-    return response()->json([
-        'total_revenue' => $totalRevenue,
-        'total_orders' => $totalOrders,
-        'total_products' => $totalProducts,
-        'total_customers' => $totalCustomers,
-        'total_categories' => $totalCategories,
-        'categories' => $categories,
-        'best_selling_products' => $bestSellingProducts,
-        'recent_orders' => $recentOrders,
-    ]);
+            return response()->json([
+                'total_revenue' => (float) $totalRevenue,
+                'total_orders' => $totalOrders,
+                'total_products' => $totalProducts,
+                'total_customers' => $totalCustomers,
+                'total_categories' => $totalCategories,
+                'categories' => $categories,
+                'best_selling_products' => $bestSellingProducts,
+                'recent_orders' => $recentOrders,
+            ], 200);
+        } catch (\Exception $e) {
+            \Log::error('Dashboard Summary Error: ' . $e->getMessage());
+            return response()->json([
+                'error' => 'Unable to fetch dashboard summary.'
+            ], 500);
+        }
+    }
 }
-
-
-}
-
-
