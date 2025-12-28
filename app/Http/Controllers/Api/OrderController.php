@@ -17,24 +17,52 @@ class OrderController extends Controller
     /**
      * Display a listing of orders (with optional filtering).
      */
-  public function index()
+//   public function index()
+// {
+//     $user = auth()->user();
+
+//     if ($user->hasRole('admin')) {
+//         $orders = Order::with('user')->latest()->get();
+//     } else {
+//         $orders = Order::with('user')->where('user_id', $user->id)->latest()->get();
+//     }
+
+//     return response()->json($orders);
+// }
+public function index()
 {
     $user = auth()->user();
 
     if ($user->hasRole('admin')) {
-        $orders = Order::with('user')->latest()->get();
+        $orders = Order::with(['user', 'product'])->latest()->get();
     } else {
-        $orders = Order::with('user')->where('user_id', $user->id)->latest()->get();
+        $orders = Order::with(['user', 'product'])->where('user_id', $user->id)->latest()->get();
     }
 
     return response()->json($orders);
 }
 
+    /**
+     * Display the specified order.
+     */
+
+// public function show(Order $order)
+// {
+//     $user = auth()->user();
+
+//     if ($user->hasRole('admin') || $order->user_id === $user->id) {
+//         return response()->json($order);
+//     }
+
+//     return response()->json(['error' => 'Unauthorized'], 403);
+// }
 public function show(Order $order)
 {
     $user = auth()->user();
 
     if ($user->hasRole('admin') || $order->user_id === $user->id) {
+        // Load the product relationship if not already loaded
+        $order->load('product');
         return response()->json($order);
     }
 

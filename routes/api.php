@@ -135,8 +135,9 @@ Route::middleware(['auth:sanctum'])->group(function () {
 
     // Enrollment Routes
     Route::get('/enrollments', [EnrollmentController::class, 'index']);
+       Route::get('/enrollments/{id}', [EnrollmentController::class, 'show']);
     Route::post('/enroll', [EnrollmentController::class, 'enroll']);
-    Route::get('/enrollments/{id}', [EnrollmentController::class, 'show']);
+ 
     Route::delete('/enrollments/{id}', [EnrollmentController::class, 'destroy']);
     Route::post('/unenroll', [TrainingController::class, 'unenroll']);
 
