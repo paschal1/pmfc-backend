@@ -33,6 +33,11 @@ public function index()
 {
     $user = auth()->user();
 
+    // Check if user is authenticated
+    if (!$user) {
+        return response()->json(['error' => 'Unauthenticated'], 401);
+    }
+
     if ($user->hasRole('admin')) {
         $orders = Order::with(['user', 'product'])->latest()->get();
     } else {
@@ -60,8 +65,12 @@ public function show(Order $order)
 {
     $user = auth()->user();
 
+    // Check if user is authenticated
+    if (!$user) {
+        return response()->json(['error' => 'Unauthenticated'], 401);
+    }
+
     if ($user->hasRole('admin') || $order->user_id === $user->id) {
-        // Load the product relationship if not already loaded
         $order->load('product');
         return response()->json($order);
     }
