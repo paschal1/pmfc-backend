@@ -159,29 +159,64 @@ public function show(Order $order)
     /**
      * Update order status (admin).
      */
+    // public function updateStatus(Request $request, $id)
+    // {
+    //     $order = Order::find($id);
+
+    //     if (!$order) {
+    //         return response()->json([
+    //             'status' => true,
+    //             'message' => Strings::OrderNotFound(),
+    //         ]);
+    //     }
+
+    //     $validator = Validator::make($request->all(), [
+    //         'status' => 'required|string|in:order_processing,pre_production,in_production,shipped,delivered,canceled',
+    //     ]);
+
+    //     if ($validator->fails()) {
+    //         return response()->json(['errors' => $validator->errors()], 422);
+    //     }
+
+    //     $order->update(['status' => $request->status]);
+
+    //     return response()->json(['message' => 'Order status updated successfully', 'order' => $order], 200);
+    // }
+
     public function updateStatus(Request $request, $id)
-    {
-        $order = Order::find($id);
+{
+    // Optional: Add authorization check if only admins should update
+    // if (!auth()->user()->hasRole('admin')) {
+    //     return response()->json(['message' => 'Unauthorized'], 403);
+    // }
 
-        if (!$order) {
-            return response()->json([
-                'status' => true,
-                'message' => Strings::OrderNotFound(),
-            ]);
-        }
+    $order = Order::find($id);
 
-        $validator = Validator::make($request->all(), [
-            'status' => 'required|string|in:order_processing,pre_production,in_production,shipped,delivered,canceled',
-        ]);
-
-        if ($validator->fails()) {
-            return response()->json(['errors' => $validator->errors()], 422);
-        }
-
-        $order->update(['status' => $request->status]);
-
-        return response()->json(['message' => 'Order status updated successfully', 'order' => $order], 200);
+    if (!$order) {
+        return response()->json([
+            'status' => false,
+            'message' => 'Order not found',
+        ], 404);
     }
+
+    $validator = Validator::make($request->all(), [
+        'status' => 'required|string|in:order_processing,pre_production,in_production,shipped,delivered,canceled',
+    ]);
+
+    if ($validator->fails()) {
+        return response()->json(['errors' => $validator->errors()], 422);
+    }
+
+            $order->update(['status' => $request->status]);
+
+            // Load relationships for complete response
+            $order->load(['user', 'product']);
+
+            return response()->json([
+                'message' => 'Order status updated successfully', 
+                'order' => $order
+            ], 200);
+        }
 
     /**
      * Cancel order by user if still in processing phase.
