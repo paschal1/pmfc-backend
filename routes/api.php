@@ -94,10 +94,10 @@ Route::middleware(['auth:sanctum'])->group(function () {
         // Route::get('/analytics/user-activity', [AnalyticsDashboardController::class, 'userActivity']);
         // Route::get('/analytics/website-performance', [AnalyticsDashboardController::class, 'websitePerformance']);
 
-    Route::get('/dashboard-summary', [AnalyticsDashboardController::class, 'dashboardSummary']);
-    Route::get('/sales-reports', [AnalyticsDashboardController::class, 'salesReports']);
-    Route::get('/user-activity', [AnalyticsDashboardController::class, 'userActivity']);
-    Route::get('/website-performance', [AnalyticsDashboardController::class, 'websitePerformance']);
+    Route::get('/analytics/dashboard-summary', [AnalyticsDashboardController::class, 'dashboardSummary']);
+    Route::get('/analytics/sales-reports', [AnalyticsDashboardController::class, 'salesReports']);
+    Route::get('/analytics/user-activity', [AnalyticsDashboardController::class, 'userActivity']);
+    Route::get('/analytics/website-performance', [AnalyticsDashboardController::class, 'websitePerformance']);
 
        
         // Permission and Role Routes
