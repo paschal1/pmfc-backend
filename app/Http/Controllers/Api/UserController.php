@@ -83,7 +83,7 @@ class UserController extends Controller
             'name' => 'sometimes|string|max:255',
             'email' => 'sometimes|email|unique:users,email,' . $user->id,
             'password' => 'sometimes|string|min:8|confirmed',
-            'role' => 'sometimes|string|in:Admin,Manager,User',
+            // 'role' => 'sometimes|string|in:Admin,Manager,User',
         ]);
 
         if ($validator->fails()) {
@@ -95,7 +95,7 @@ class UserController extends Controller
             'name' => $request->has('name') ? StringUtility::sanitize($request->input('name')) : $user->name,
             'email' => $request->has('email') ? $request->input('email') : $user->email,
             'password' => $request->has('password') ? Hash::make($request->input('password')) : $user->password,
-            'role' => $request->has('role') ? $request->input('role') : $user->role,
+            // 'role' => $request->has('role') ? $request->input('role') : $user->role,
         ]);
         return response()->json(['message' => 'User updated successfully', 'user' => $user], 200);
     

@@ -81,6 +81,7 @@ Route::middleware(['auth:sanctum'])->group(function () {
     Route::get('/admin/dashboard-summary', [AnalyticsDashboardController::class, 'dashboardSummary']);
     Route::post('/place-order', [UserController::class, 'placeOrder']);
     Route::get('/update-profile', [UserController::class, 'updateProfile']);
+    Route::patch('/update-user-profile', [UserController::class, 'update']);
 
     //////////////////////////////////////////////////////////
     // Admin Routes
