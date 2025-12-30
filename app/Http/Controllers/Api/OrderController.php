@@ -231,19 +231,57 @@ class OrderController extends Controller
      * Get orders for the logged-in user.
      * ✅ FIXED: Load orderItems.product
      */
-    public function getUserOrders()
-    {
-        $user = auth()->user();
+    // public function getUserOrders()
+    // {
+    //     $user = auth()->user();
 
-        if (!$user) {
-            return response()->json(['error' => 'Unauthenticated'], 401);
-        }
+    //     if (!$user) {
+    //         return response()->json(['error' => 'Unauthenticated'], 401);
+    //     }
 
-        $orders = Order::where('user_id', auth()->id())
-            ->with(['user', 'orderItems.product'])
-            ->latest()
-            ->get();
+    //     $orders = Order::where('user_id', auth()->id())
+    //         ->with(['user', 'orderItems.product'])
+    //         ->latest()
+    //         ->get();
 
-        return response()->json(['data' => $orders, 'orders' => $orders], 200);
+    //     return response()->json(['data' => $orders, 'orders' => $orders], 200);
+    // }
+
+
+
+// In app/Http/Controllers/Api/OrderController.php
+
+/**
+ * Get orders for the logged-in user.
+ * ✅ FIXED: Don't load 'user' relationship - auth user is already available
+ */
+public function getUserOrders()
+{
+    $user = auth()->user();
+
+    if (!$user) {
+        return response()->json(['error' => 'Unauthenticated'], 401);
     }
+
+    // ✅ FIX: Load only orderItems.product, NOT the user relationship
+    $orders = Order::where('user_id', $user->id)
+        ->with('orderItems.product')  // ✅ Only load orderItems
+        ->latest()
+        ->get()
+        ->map(function ($order) {
+            return [
+                'id' => $order->id,
+                'order_id' => $order->id,
+                'trackingNumber' => $order->tracking_number,
+                'date' => $order->created_at->format('Y-m-d'),
+                'status' => $order->status,
+                'total' => '₦' . number_format($order->total_price, 2),
+                'items' => $order->orderItems->count(),
+                'productName' => $order->orderItems->first()?->product_name ?? 'Product',
+                'productImage' => $order->orderItems->first()?->product?->image ?? '📦'
+            ];
+        });
+
+    return response()->json(['data' => $orders], 200);
+}
 }
