@@ -70,7 +70,7 @@ Route::put('contacts/{id}/status', [ContactController::class, 'update']);
 
 Route::middleware(['auth:sanctum'])->group(function () {
 
-     Route::get('/orders/user', [OrderController::class, 'getUserOrders']);
+    
 
      //location costs
         Route::apiResource('location-costs', LocationCostController::class);
@@ -130,7 +130,7 @@ Route::middleware(['auth:sanctum'])->group(function () {
     //////////////////////////////////////////////////////////
     // Other Common Routes
     //////////////////////////////////////////////////////////
-
+     Route::get('/orders/user', [OrderController::class, 'getUserOrders']);
     // Cart Routes
     Route::apiResource('cartItems', CartItemController::class);
     Route::get('cart', [CartController::class, 'viewCart']);
