@@ -161,11 +161,21 @@ Route::middleware(['auth:sanctum'])->group(function () {
     Route::get('/payment/callback', [PaymentController::class, 'handleGatewayCallback'])->name('payment.callback');
 
     // Order Routes
+     Route::get('/orders/user', [OrderController::class, 'getUserOrders']);
+    Route::post('/orders/track/{trackingNumber}', [OrderController::class, 'trackOrder']);
+    
+    // Orders - General routes
+    Route::get('/orders', [OrderController::class, 'index']);
+    Route::get('/orders/{order}', [OrderController::class, 'show']);
+    Route::post('/orders', [OrderController::class, 'placeOrder']);
+    Route::put('/orders/{id}/status', [OrderController::class, 'updateStatus']);
     Route::post('/orders/{orderId}/cancel', [OrderController::class, 'cancelOrder']);
-    Route::put('/orders/{id}/status', [OrderController::class, 'updateStatus']); 
-    Route::get('/orders/track/{trackingNumber}', [OrderController::class, 'trackOrder']);
     Route::post('/orders/{id}/refund', [OrderController::class, 'issueRefund']);
-    Route::get('/orders/user', [OrderController::class, 'getUserOrders']);
+    // Route::post('/orders/{orderId}/cancel', [OrderController::class, 'cancelOrder']);
+    // Route::put('/orders/{id}/status', [OrderController::class, 'updateStatus']); 
+    // Route::get('/orders/track/{trackingNumber}', [OrderController::class, 'trackOrder']);
+    // Route::post('/orders/{id}/refund', [OrderController::class, 'issueRefund']);
+    // Route::get('/orders/user', [OrderController::class, 'getUserOrders']);
 });
 
 Route::get('/test-password', function () {
