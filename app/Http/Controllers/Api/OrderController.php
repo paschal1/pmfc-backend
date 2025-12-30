@@ -40,21 +40,37 @@ class OrderController extends Controller
     /**
      * Display the specified order.
      */
-    public function show(Order $id)
-    {
-        $user = auth()->user();
+   public function show($id)
+{
+    $user = auth()->user();
 
-        if (!$user) {
-            return response()->json(['error' => 'Unauthenticated'], 401);
-        }
-
-        if ($user->hasRole('admin') || $order->user_id === $user->id) {
-            $order->load(['user', 'orderItems.product']);
-            return response()->json($order);
-        }
-
-        return response()->json(['error' => 'Unauthorized'], 403);
+    if (!$user) {
+        return response()->json(['error' => 'Unauthenticated'], 401);
     }
+
+    try {
+        // Find the order by ID
+        $order = Order::findOrFail($id);
+        
+        // Check authorization
+        if (!$user->hasRole('admin') && $order->user_id !== $user->id) {
+            return response()->json(['error' => 'Unauthorized'], 403);
+        }
+
+        // Load relationships
+        $order->load(['user', 'orderItems.product']);
+        
+        return response()->json($order);
+
+    } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
+        return response()->json(['error' => 'Order not found'], 404);
+    } catch (\Exception $e) {
+        return response()->json([
+            'error' => 'Failed to fetch order',
+            'message' => $e->getMessage()
+        ], 500);
+    }
+}
 
     /**
      * Place a new order from cart items.
