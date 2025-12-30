@@ -8,7 +8,7 @@ use App\Models\User;
 use App\Utility\Methods;
 use App\Utility\ImageProcessor;
 use Illuminate\Support\Facades\Validator;
-use Illuminate\Support\Facades\Hash;  // ✅ ADD THIS IMPORT
+use Illuminate\Support\Facades\Hash; 
 use App\Utility\Strings;
 
 

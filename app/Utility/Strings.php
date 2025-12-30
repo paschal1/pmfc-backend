@@ -108,6 +108,26 @@ class Strings
     {
         return 'Profile picture updated successfully.';
     }
+
+    public static function sanitize(?string $input): string
+    {
+        if ($input === null) {
+            return '';
+        }
+
+        // Basic but effective sanitization
+        $input = trim($input);
+        $input = strip_tags($input);                    // Remove HTML/PHP tags
+        $input = htmlspecialchars($input, ENT_QUOTES, 'UTF-8'); // Convert special chars
+        $input = preg_replace('/\s+/', ' ', $input);    // Collapse multiple spaces
+
+        return $input;
+    }
+
+    public static function sanitizeStrict(?string $input): string
+    {
+        return filter_var(trim($input ?? ''), FILTER_SANITIZE_STRING) ?? '';
+    }
 }
 
 ?>
