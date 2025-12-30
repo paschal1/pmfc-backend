@@ -16,19 +16,16 @@ class OrderController extends Controller
 {
     /**
      * Display a listing of orders (with optional filtering).
-     * ✅ FIXED: Load orderItems.product instead of single product
      */
     public function index()
     {
         $user = auth()->user();
 
-        // Check if user is authenticated
         if (!$user) {
             return response()->json(['error' => 'Unauthenticated'], 401);
         }
 
         if ($user->hasRole('admin')) {
-            // ✅ FIX: Load orderItems with their products
             $orders = Order::with(['user', 'orderItems.product'])->latest()->get();
         } else {
             $orders = Order::with(['user', 'orderItems.product'])
@@ -42,19 +39,16 @@ class OrderController extends Controller
 
     /**
      * Display the specified order.
-     * ✅ FIXED: Load orderItems.product instead of single product
      */
     public function show(Order $order)
     {
         $user = auth()->user();
 
-        // Check if user is authenticated
         if (!$user) {
             return response()->json(['error' => 'Unauthenticated'], 401);
         }
 
         if ($user->hasRole('admin') || $order->user_id === $user->id) {
-            // ✅ FIX: Load orderItems with products
             $order->load(['user', 'orderItems.product']);
             return response()->json($order);
         }
@@ -122,7 +116,7 @@ class OrderController extends Controller
     }
 
     /**
-     * Track an order using tracking number.
+     * Track an order using tracking number (PUBLIC - no auth required).
      */
     public function trackOrder($trackingNumber)
     {
@@ -145,11 +139,6 @@ class OrderController extends Controller
      */
     public function updateStatus(Request $request, $id)
     {
-        // Optional: Add authorization check if only admins should update
-        // if (!auth()->user()->hasRole('admin')) {
-        //     return response()->json(['message' => 'Unauthorized'], 403);
-        // }
-
         $order = Order::find($id);
 
         if (!$order) {
@@ -169,7 +158,6 @@ class OrderController extends Controller
 
         $order->update(['status' => $request->status]);
 
-        // ✅ FIX: Load orderItems with products
         $order->load(['user', 'orderItems.product']);
 
         return response()->json([
@@ -198,7 +186,6 @@ class OrderController extends Controller
             'payment_status' => $order->payment_status === 'Paid' ? 'Refund Pending' : 'Unpaid'
         ]);
 
-        // Optionally trigger refund logic here
         return response()->json([
             'message' => 'Order has been canceled successfully.',
             'order' => $order
@@ -220,8 +207,6 @@ class OrderController extends Controller
             return response()->json(['message' => 'Refund can only be issued for delivered orders'], 400);
         }
 
-        // Optional: Trigger refund logic using payment gateway API
-
         $order->update(['status' => 'canceled', 'payment_status' => 'Refunded']);
 
         return response()->json(['message' => 'Refund issued successfully', 'order' => $order], 200);
@@ -229,60 +214,46 @@ class OrderController extends Controller
 
     /**
      * Get orders for the logged-in user.
-     * ✅ FIXED: Load orderItems.product
+     * 
+     * ✅ THIS IS THE CRITICAL FIX
+     * - Route must be: Route::get('/orders/user', ...)
+     * - Must come BEFORE Route::get('/orders/{order}', ...)
+     * - Uses manual query, NOT route model binding
      */
-    // public function getUserOrders()
-    // {
-    //     $user = auth()->user();
+    public function getUserOrders()
+    {
+        $user = auth()->user();
 
-    //     if (!$user) {
-    //         return response()->json(['error' => 'Unauthenticated'], 401);
-    //     }
+        if (!$user) {
+            return response()->json(['error' => 'Unauthenticated'], 401);
+        }
 
-    //     $orders = Order::where('user_id', auth()->id())
-    //         ->with(['user', 'orderItems.product'])
-    //         ->latest()
-    //         ->get();
+        try {
+            $orders = Order::where('user_id', $user->id)
+                ->with('orderItems.product')
+                ->latest()
+                ->get()
+                ->map(function ($order) {
+                    return [
+                        'id' => $order->id,
+                        'order_id' => $order->id,
+                        'trackingNumber' => $order->tracking_number,
+                        'date' => $order->created_at->format('Y-m-d'),
+                        'status' => $order->status,
+                        'total' => '₦' . number_format($order->total_price, 2),
+                        'items' => $order->orderItems->count(),
+                        'productName' => $order->orderItems->first()?->product_name ?? 'Product',
+                        'productImage' => $order->orderItems->first()?->product?->image ?? '📦'
+                    ];
+                });
 
-    //     return response()->json(['data' => $orders, 'orders' => $orders], 200);
-    // }
+            return response()->json(['data' => $orders], 200);
 
-
-
-// In app/Http/Controllers/Api/OrderController.php
-
-/**
- * Get orders for the logged-in user.
- * ✅ FIXED: Don't load 'user' relationship - auth user is already available
- */
-public function getUserOrders()
-{
-    $user = auth()->user();
-
-    if (!$user) {
-        return response()->json(['error' => 'Unauthenticated'], 401);
+        } catch (\Exception $e) {
+            return response()->json([
+                'error' => 'Failed to fetch orders',
+                'message' => $e->getMessage()
+            ], 500);
+        }
     }
-
-    // ✅ FIX: Load only orderItems.product, NOT the user relationship
-    $orders = Order::where('user_id', $user->id)
-        ->with('orderItems.product')  // ✅ Only load orderItems
-        ->latest()
-        ->get()
-        ->map(function ($order) {
-            return [
-                'id' => $order->id,
-                'order_id' => $order->id,
-                'trackingNumber' => $order->tracking_number,
-                'date' => $order->created_at->format('Y-m-d'),
-                'status' => $order->status,
-                'total' => '₦' . number_format($order->total_price, 2),
-                'items' => $order->orderItems->count(),
-                'productName' => $order->orderItems->first()?->product_name ?? 'Product',
-                'productImage' => $order->orderItems->first()?->product?->image ?? '📦'
-            ];
-        });
-
-    return response()->json(['data' => $orders], 200);
-}
-
 }

@@ -70,6 +70,8 @@ Route::put('contacts/{id}/status', [ContactController::class, 'update']);
 
 Route::middleware(['auth:sanctum'])->group(function () {
 
+     Route::get('/orders/user', [OrderController::class, 'getUserOrders']);
+
      //location costs
         Route::apiResource('location-costs', LocationCostController::class);
     // User Profile and Dashboard
@@ -161,16 +163,19 @@ Route::middleware(['auth:sanctum'])->group(function () {
     Route::get('/payment/callback', [PaymentController::class, 'handleGatewayCallback'])->name('payment.callback');
 
     // Order Routes
-     Route::get('/orders/user', [OrderController::class, 'getUserOrders']);
-    Route::post('/orders/track/{trackingNumber}', [OrderController::class, 'trackOrder']);
+     
     
-    // Orders - General routes
+    // General order routes (come after specific routes)
     Route::get('/orders', [OrderController::class, 'index']);
-    Route::get('/orders/{order}', [OrderController::class, 'show']);
     Route::post('/orders', [OrderController::class, 'placeOrder']);
+    Route::get('/orders/{order}', [OrderController::class, 'show']);  // NOW this won't match /user
+    
+    // Order management
     Route::put('/orders/{id}/status', [OrderController::class, 'updateStatus']);
     Route::post('/orders/{orderId}/cancel', [OrderController::class, 'cancelOrder']);
     Route::post('/orders/{id}/refund', [OrderController::class, 'issueRefund']);
+
+    
     // Route::post('/orders/{orderId}/cancel', [OrderController::class, 'cancelOrder']);
     // Route::put('/orders/{id}/status', [OrderController::class, 'updateStatus']); 
     // Route::get('/orders/track/{trackingNumber}', [OrderController::class, 'trackOrder']);
