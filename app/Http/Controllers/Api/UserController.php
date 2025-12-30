@@ -10,7 +10,7 @@ use App\Utility\ImageProcessor;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\Hash;  // ✅ ADD THIS IMPORT
 use App\Utility\Strings;
-use App\Utility\StringUtility;
+
 
 
 class UserController extends Controller
@@ -52,7 +52,7 @@ class UserController extends Controller
 
         // Create user
         $user = User::create([
-            'name' => StringUtility::sanitize($request->input('name')),
+            'name' => Strings::sanitize($request->input('name')),
             'email' => $request->input('email'),
             'password' => Hash::make($request->input('password')),
             'role' => $request->input('role'),
@@ -104,7 +104,7 @@ class UserController extends Controller
         $updateData = [];
 
         if ($request->has('name')) {
-            $updateData['name'] = StringUtility::sanitize($request->input('name'));
+            $updateData['name'] = Strings::sanitize($request->input('name'));
         }
 
         if ($request->has('email')) {
@@ -112,11 +112,11 @@ class UserController extends Controller
         }
 
         if ($request->has('phone')) {
-            $updateData['phone'] = StringUtility::sanitize($request->input('phone'));
+            $updateData['phone'] = Strings::sanitize($request->input('phone'));
         }
 
         if ($request->has('address')) {
-            $updateData['address'] = StringUtility::sanitize($request->input('address'));
+            $updateData['address'] = Strings::sanitize($request->input('address'));
         }
 
         $user->update($updateData);
