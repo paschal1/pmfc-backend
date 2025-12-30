@@ -7,7 +7,8 @@ use Illuminate\Http\Request;
 use App\Models\User;
 use App\Utility\Methods;
 use App\Utility\ImageProcessor;
-use Illuminate\Support\Facades\Validator; 
+use Illuminate\Support\Facades\Validator;
+use Illuminate\Support\Facades\Hash;  // ✅ ADD THIS IMPORT
 use App\Utility\Strings;
 use App\Utility\StringUtility;
 
@@ -15,23 +16,21 @@ use App\Utility\StringUtility;
 class UserController extends Controller
 {
     /**
-     * Display a listing of the resourcek.
+     * Display a listing of users.
      */
     public function index()
     {
-        /**
-     * Display a listing of users.
-     */
         $users = User::all();
         return response()->json(['users' => $users], 200);
-    
-       
-
     }
 
-    public function activeUser(){
-
+    /**
+     * Display active users
+     */
+    public function activeUser()
+    {
         $activeUsers = User::with('activityLogs')->get()->filter(fn($user) => $user->isActive());
+        return response()->json(['activeUsers' => $activeUsers], 200);
     }
 
     /**
@@ -63,19 +62,26 @@ class UserController extends Controller
     }
 
     /**
-     * Display the specified resource.
+     * Display the specified user.
      */
     public function show(string $id)
     {
-        //
+        $user = User::find($id);
+
+        if (!$user) {
+            return response()->json(['message' => 'User not found'], 404);
+        }
+
+        return response()->json(['user' => $user], 200);
     }
 
     /**
-     * Update the specified resource in storage.
+     * Update the authenticated user profile
+     * POST /api/update-profile
      */
-     public function update(Request $request)
+    public function update(Request $request)
     {
-        // ✅ Get authenticated user (no need for $id)
+        // ✅ Get authenticated user
         $user = auth()->user();
 
         if (!$user) {
@@ -94,19 +100,32 @@ class UserController extends Controller
             return response()->json(['errors' => $validator->errors()], 422);
         }
 
-        // Update user
-        $user->update([
-            'name' => $request->has('name') ? StringUtility::sanitize($request->input('name')) : $user->name,
-            'email' => $request->has('email') ? $request->input('email') : $user->email,
-            'phone' => $request->has('phone') ? StringUtility::sanitize($request->input('phone')) : $user->phone,
-            'address' => $request->has('address') ? StringUtility::sanitize($request->input('address')) : $user->address,
-        ]);
+        // Update user with sanitized data
+        $updateData = [];
+
+        if ($request->has('name')) {
+            $updateData['name'] = StringUtility::sanitize($request->input('name'));
+        }
+
+        if ($request->has('email')) {
+            $updateData['email'] = $request->input('email');
+        }
+
+        if ($request->has('phone')) {
+            $updateData['phone'] = StringUtility::sanitize($request->input('phone'));
+        }
+
+        if ($request->has('address')) {
+            $updateData['address'] = StringUtility::sanitize($request->input('address'));
+        }
+
+        $user->update($updateData);
 
         return response()->json(['message' => 'User updated successfully', 'data' => $user], 200);
     }
 
     /**
-     * Remove the specified resource from storage.
+     * Remove the specified user from storage.
      */
     public function destroy(string $id)
     {
@@ -121,6 +140,10 @@ class UserController extends Controller
         return response()->json(['message' => 'User deleted successfully'], 200);
     }
 
+    /**
+     * Change user password
+     * POST /api/change-password
+     */
     public function changePassword(Request $request)
     {
         $user = auth()->user();
@@ -130,10 +153,14 @@ class UserController extends Controller
         }
 
         // Validate input
-        $validated = $request->validate([
+        $validator = Validator::make($request->all(), [
             'currentPassword' => 'required|string|min:8',
             'newPassword' => 'required|string|min:8',
         ]);
+
+        if ($validator->fails()) {
+            return response()->json(['errors' => $validator->errors()], 422);
+        }
 
         // Verify current password is correct
         if (!Hash::check($request->currentPassword, $user->password)) {
@@ -149,14 +176,14 @@ class UserController extends Controller
             ], 422);
         }
 
-        // Password strength validation (optional but recommended)
+        // Password strength validation
         if (!$this->isStrongPassword($request->newPassword)) {
             return response()->json([
                 'error' => 'Password must contain uppercase, lowercase, and numbers'
             ], 422);
         }
 
-        // Update password - Hash the password before saving
+        // Update password
         $user->update([
             'password' => Hash::make($request->newPassword)
         ]);
@@ -167,7 +194,7 @@ class UserController extends Controller
     }
 
     /**
-     * Optional: Check password strength
+     * Check password strength
      * Requires: uppercase, lowercase, and at least one number
      */
     private function isStrongPassword(string $password): bool
