@@ -70,22 +70,21 @@ class UserController extends Controller
     /**
      * Update the specified resource in storage.
      */
-    public function update(Request $request, string $id)
+     public function update(Request $request)
     {
-        $user = User::find($id);
+        // ✅ Get authenticated user (no need for $id)
+        $user = auth()->user();
 
         if (!$user) {
-            return response()->json(['message' => 'User not found'], 404);
+            return response()->json(['error' => 'Unauthenticated'], 401);
         }
 
         // Validate request data
         $validator = Validator::make($request->all(), [
             'name' => 'sometimes|string|max:255',
             'email' => 'sometimes|email|unique:users,email,' . $user->id,
-            // 'password' => 'sometimes|string|min:8|confirmed',
             'phone' => 'sometimes|string|max:20',
             'address' => 'sometimes|string|max:500',
-            // 'role' => 'sometimes|string|in:Admin,Manager,User',
         ]);
 
         if ($validator->fails()) {
@@ -96,13 +95,11 @@ class UserController extends Controller
         $user->update([
             'name' => $request->has('name') ? StringUtility::sanitize($request->input('name')) : $user->name,
             'email' => $request->has('email') ? $request->input('email') : $user->email,
-            // 'password' => $request->has('password') ? Hash::make($request->input('password')) : $user->password,
             'phone' => $request->has('phone') ? StringUtility::sanitize($request->input('phone')) : $user->phone,
             'address' => $request->has('address') ? StringUtility::sanitize($request->input('address')) : $user->address,
-            // 'role' => $request->has('role') ? $request->input('role') : $user->role,
         ]);
-        return response()->json(['message' => 'User updated successfully', 'user' => $user], 200);
-    
+
+        return response()->json(['message' => 'User updated successfully', 'data' => $user], 200);
     }
 
     /**
