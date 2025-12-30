@@ -7,6 +7,7 @@ use Illuminate\Http\Request;
 use App\Models\User;
 use App\Utility\Methods;
 use App\Utility\ImageProcessor;
+use Illuminate\Support\Facades\Validator; 
 use App\Utility\Strings;
 
 class UserController extends Controller
