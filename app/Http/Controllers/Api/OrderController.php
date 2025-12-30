@@ -284,4 +284,5 @@ public function getUserOrders()
 
     return response()->json(['data' => $orders], 200);
 }
+
 }
