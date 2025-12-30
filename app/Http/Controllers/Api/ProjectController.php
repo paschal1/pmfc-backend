@@ -10,10 +10,32 @@ use CloudinaryLabs\CloudinaryLaravel\Facades\Cloudinary;
 
 class ProjectController extends Controller
 {
-    public function index()
-    {
-        return response()->json(Project::latest()->get(), 200);
+    // public function index()
+    // {
+    //     return response()->json(Project::latest()->get(), 200);
+    // }
+
+    public function index(Request $request)
+{
+    $request->validate([
+        'type' => 'nullable|in:all,residential,hospitality,office,commercial',
+        'per_page' => 'nullable|integer|min:1|max:50',
+    ]);
+
+    $perPage = $request->get('per_page', 9); // default 9 per page (good for UI grids)
+
+    $query = Project::latest();
+
+    // Apply type filter (skip when "all" or not provided)
+    if ($request->filled('type') && $request->type !== 'all') {
+        $query->where('type', $request->type);
     }
+
+    $projects = $query->paginate($perPage);
+
+    return response()->json($projects, 200);
+}
+
 
     public function store(Request $request)
     {
@@ -22,6 +44,7 @@ class ProjectController extends Controller
             'description' => 'required|string',
             'image' => 'nullable|image|mimes:jpg,jpeg,png,webp,gif|max:2048',
             'status' => 'nullable|in:ongoing,completed',
+            'type' => 'required|in:residential,hospitality,office,commercial',
         ]);
 
         $imageUrl = null;
@@ -38,6 +61,7 @@ class ProjectController extends Controller
             'image' => $imageUrl,
             'slug' => Str::slug($validated['title']),
             'status' => $validated['status'] ?? 'ongoing',
+            'type' => $validated['type'],
         ]);
 
         return response()->json([
@@ -61,6 +85,7 @@ class ProjectController extends Controller
                 'title' => 'nullable|string|max:255',
                 'description' => 'nullable|string',
                 'image' => 'nullable|image|mimes:jpg,jpeg,png,webp,gif|max:2048',
+                'type' => 'required|in:residential,hospitality,office,commercial',
                 'status' => 'nullable|in:ongoing,completed',
             ]);
 
@@ -78,6 +103,11 @@ class ProjectController extends Controller
             if (isset($validated['status'])) {
                 $data['status'] = $validated['status'];
             }
+
+            if (isset($validated['type'])) {
+                $data['type'] = $validated['type'];
+            }
+
 
             if ($request->hasFile('image')) {
                 $upload = Cloudinary::uploadApi()->upload($request->file('image')->getRealPath(), [
