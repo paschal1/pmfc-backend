@@ -82,7 +82,7 @@ Route::middleware(['auth:sanctum'])->group(function () {
     Route::post('/place-order', [UserController::class, 'placeOrder']);
     Route::get('/update-profile', [UserController::class, 'updateProfile']);
     Route::patch('/update-user-profile', [UserController::class, 'update']);
-
+    Route::post('/change-password', [UserController::class, 'changePassword']);
     //////////////////////////////////////////////////////////
     // Admin Routes
     //////////////////////////////////////////////////////////

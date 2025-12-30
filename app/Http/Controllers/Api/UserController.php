@@ -82,7 +82,9 @@ class UserController extends Controller
         $validator = Validator::make($request->all(), [
             'name' => 'sometimes|string|max:255',
             'email' => 'sometimes|email|unique:users,email,' . $user->id,
-            'password' => 'sometimes|string|min:8|confirmed',
+            // 'password' => 'sometimes|string|min:8|confirmed',
+            'phone' => 'sometimes|string|max:20',
+            'address' => 'sometimes|string|max:500',
             // 'role' => 'sometimes|string|in:Admin,Manager,User',
         ]);
 
@@ -94,7 +96,9 @@ class UserController extends Controller
         $user->update([
             'name' => $request->has('name') ? StringUtility::sanitize($request->input('name')) : $user->name,
             'email' => $request->has('email') ? $request->input('email') : $user->email,
-            'password' => $request->has('password') ? Hash::make($request->input('password')) : $user->password,
+            // 'password' => $request->has('password') ? Hash::make($request->input('password')) : $user->password,
+            'phone' => $request->has('phone') ? StringUtility::sanitize($request->input('phone')) : $user->phone,
+            'address' => $request->has('address') ? StringUtility::sanitize($request->input('address')) : $user->address,
             // 'role' => $request->has('role') ? $request->input('role') : $user->role,
         ]);
         return response()->json(['message' => 'User updated successfully', 'user' => $user], 200);
@@ -115,5 +119,61 @@ class UserController extends Controller
         $user->delete();
 
         return response()->json(['message' => 'User deleted successfully'], 200);
+    }
+
+    public function changePassword(Request $request)
+    {
+        $user = auth()->user();
+
+        if (!$user) {
+            return response()->json(['error' => 'Unauthenticated'], 401);
+        }
+
+        // Validate input
+        $validated = $request->validate([
+            'currentPassword' => 'required|string|min:8',
+            'newPassword' => 'required|string|min:8',
+        ]);
+
+        // Verify current password is correct
+        if (!Hash::check($request->currentPassword, $user->password)) {
+            return response()->json([
+                'error' => 'Current password is incorrect'
+            ], 422);
+        }
+
+        // Prevent using same password
+        if (Hash::check($request->newPassword, $user->password)) {
+            return response()->json([
+                'error' => 'New password must be different from current password'
+            ], 422);
+        }
+
+        // Password strength validation (optional but recommended)
+        if (!$this->isStrongPassword($request->newPassword)) {
+            return response()->json([
+                'error' => 'Password must contain uppercase, lowercase, and numbers'
+            ], 422);
+        }
+
+        // Update password - Hash the password before saving
+        $user->update([
+            'password' => Hash::make($request->newPassword)
+        ]);
+
+        return response()->json([
+            'message' => 'Password changed successfully'
+        ], 200);
+    }
+
+    /**
+     * Optional: Check password strength
+     * Requires: uppercase, lowercase, and at least one number
+     */
+    private function isStrongPassword(string $password): bool
+    {
+        return preg_match('/[a-z]/', $password) && 
+               preg_match('/[A-Z]/', $password) && 
+               preg_match('/[0-9]/', $password);
     }
 }
