@@ -64,6 +64,8 @@ Route::get('contacts', [ContactController::class, 'index']);
 Route::post('contacts', [ContactController::class, 'store']);
 Route::put('contacts/{id}/status', [ContactController::class, 'update']);
 
+Route::post('/students', [StudentController::class, 'store']);
+
 //////////////////////////////////////////////////////////////
 // Authenticated Routes (With Sanctum Middleware)
 //////////////////////////////////////////////////////////////
