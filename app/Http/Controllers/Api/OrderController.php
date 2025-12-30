@@ -40,7 +40,7 @@ class OrderController extends Controller
     /**
      * Display the specified order.
      */
-    public function show(Order $order)
+    public function show(Order $id)
     {
         $user = auth()->user();
 

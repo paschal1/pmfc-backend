@@ -168,7 +168,7 @@ Route::middleware(['auth:sanctum'])->group(function () {
     // General order routes (come after specific routes)
     Route::get('/orders', [OrderController::class, 'index']);
     Route::post('/orders', [OrderController::class, 'placeOrder']);
-    Route::get('/orders/{order}', [OrderController::class, 'show']);  // NOW this won't match /user
+    Route::get('/orders/{id}', [OrderController::class, 'show'])->where('order', '[0-9]+');  // NOW this won't match /user
     
     // Order management
     Route::put('/orders/{id}/status', [OrderController::class, 'updateStatus']);
