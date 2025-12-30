@@ -9,6 +9,8 @@ use App\Utility\Methods;
 use App\Utility\ImageProcessor;
 use Illuminate\Support\Facades\Validator; 
 use App\Utility\Strings;
+use App\Utility\StringUtility;
+
 
 class UserController extends Controller
 {
