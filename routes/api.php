@@ -50,7 +50,7 @@ Route::apiResource('blogs', BlogController::class)->only(['index', 'show']);
 Route::apiResource('projects', ProjectController::class)->only(['index', 'show']);
 Route::apiResource('services', ServiceController::class)->only(['index', 'show']);
 Route::apiResource('testimonials', TestimonialController::class)->only(['index', 'show']);
-Route::apiResource('whishlists', WishlistController::class)->only(['index', 'show']);
+Route::apiResource('wishlist', WishlistController::class)->only(['index', 'show']);
 Route::apiResource('ratings', RatingController::class)->only(['index', 'show']);
 Route::apiResource('training-programs', TrainingController::class)->only(['index', 'show']);
 
@@ -152,7 +152,7 @@ Route::middleware(['auth:sanctum'])->group(function () {
     Route::apiResource('projects', ProjectController::class)->except(['index', 'show']);
     Route::apiResource('services', ServiceController::class)->except(['index', 'show']);
     Route::apiResource('testimonials', TestimonialController::class)->except(['index', 'show']);
-    Route::apiResource('whishlists', WishlistController::class)->except(['index', 'show']);
+    Route::apiResource('wishlist', WishlistController::class)->except(['index', 'show']);
     Route::apiResource('ratings', RatingController::class)->except(['index', 'show']);
 
     // Quote and Payment Routes

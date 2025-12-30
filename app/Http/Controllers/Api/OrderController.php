@@ -16,67 +16,51 @@ class OrderController extends Controller
 {
     /**
      * Display a listing of orders (with optional filtering).
+     * ✅ FIXED: Load orderItems.product instead of single product
      */
-//   public function index()
-// {
-//     $user = auth()->user();
+    public function index()
+    {
+        $user = auth()->user();
 
-//     if ($user->hasRole('admin')) {
-//         $orders = Order::with('user')->latest()->get();
-//     } else {
-//         $orders = Order::with('user')->where('user_id', $user->id)->latest()->get();
-//     }
+        // Check if user is authenticated
+        if (!$user) {
+            return response()->json(['error' => 'Unauthenticated'], 401);
+        }
 
-//     return response()->json($orders);
-// }
-public function index()
-{
-    $user = auth()->user();
+        if ($user->hasRole('admin')) {
+            // ✅ FIX: Load orderItems with their products
+            $orders = Order::with(['user', 'orderItems.product'])->latest()->get();
+        } else {
+            $orders = Order::with(['user', 'orderItems.product'])
+                ->where('user_id', $user->id)
+                ->latest()
+                ->get();
+        }
 
-    // Check if user is authenticated
-    if (!$user) {
-        return response()->json(['error' => 'Unauthenticated'], 401);
+        return response()->json($orders);
     }
-
-    if ($user->hasRole('admin')) {
-        $orders = Order::with(['user', 'product'])->latest()->get();
-    } else {
-        $orders = Order::with(['user', 'product'])->where('user_id', $user->id)->latest()->get();
-    }
-
-    return response()->json($orders);
-}
 
     /**
      * Display the specified order.
+     * ✅ FIXED: Load orderItems.product instead of single product
      */
+    public function show(Order $order)
+    {
+        $user = auth()->user();
 
-// public function show(Order $order)
-// {
-//     $user = auth()->user();
+        // Check if user is authenticated
+        if (!$user) {
+            return response()->json(['error' => 'Unauthenticated'], 401);
+        }
 
-//     if ($user->hasRole('admin') || $order->user_id === $user->id) {
-//         return response()->json($order);
-//     }
+        if ($user->hasRole('admin') || $order->user_id === $user->id) {
+            // ✅ FIX: Load orderItems with products
+            $order->load(['user', 'orderItems.product']);
+            return response()->json($order);
+        }
 
-//     return response()->json(['error' => 'Unauthorized'], 403);
-// }
-public function show(Order $order)
-{
-    $user = auth()->user();
-
-    // Check if user is authenticated
-    if (!$user) {
-        return response()->json(['error' => 'Unauthenticated'], 401);
+        return response()->json(['error' => 'Unauthorized'], 403);
     }
-
-    if ($user->hasRole('admin') || $order->user_id === $user->id) {
-        $order->load('product');
-        return response()->json($order);
-    }
-
-    return response()->json(['error' => 'Unauthorized'], 403);
-}
 
     /**
      * Place a new order from cart items.
@@ -159,64 +143,40 @@ public function show(Order $order)
     /**
      * Update order status (admin).
      */
-    // public function updateStatus(Request $request, $id)
-    // {
-    //     $order = Order::find($id);
-
-    //     if (!$order) {
-    //         return response()->json([
-    //             'status' => true,
-    //             'message' => Strings::OrderNotFound(),
-    //         ]);
-    //     }
-
-    //     $validator = Validator::make($request->all(), [
-    //         'status' => 'required|string|in:order_processing,pre_production,in_production,shipped,delivered,canceled',
-    //     ]);
-
-    //     if ($validator->fails()) {
-    //         return response()->json(['errors' => $validator->errors()], 422);
-    //     }
-
-    //     $order->update(['status' => $request->status]);
-
-    //     return response()->json(['message' => 'Order status updated successfully', 'order' => $order], 200);
-    // }
-
     public function updateStatus(Request $request, $id)
-{
-    // Optional: Add authorization check if only admins should update
-    // if (!auth()->user()->hasRole('admin')) {
-    //     return response()->json(['message' => 'Unauthorized'], 403);
-    // }
+    {
+        // Optional: Add authorization check if only admins should update
+        // if (!auth()->user()->hasRole('admin')) {
+        //     return response()->json(['message' => 'Unauthorized'], 403);
+        // }
 
-    $order = Order::find($id);
+        $order = Order::find($id);
 
-    if (!$order) {
-        return response()->json([
-            'status' => false,
-            'message' => 'Order not found',
-        ], 404);
-    }
-
-    $validator = Validator::make($request->all(), [
-        'status' => 'required|string|in:order_processing,pre_production,in_production,shipped,delivered,canceled',
-    ]);
-
-    if ($validator->fails()) {
-        return response()->json(['errors' => $validator->errors()], 422);
-    }
-
-            $order->update(['status' => $request->status]);
-
-            // Load relationships for complete response
-            $order->load(['user', 'product']);
-
+        if (!$order) {
             return response()->json([
-                'message' => 'Order status updated successfully', 
-                'order' => $order
-            ], 200);
+                'status' => false,
+                'message' => 'Order not found',
+            ], 404);
         }
+
+        $validator = Validator::make($request->all(), [
+            'status' => 'required|string|in:order_processing,pre_production,in_production,shipped,delivered,canceled',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json(['errors' => $validator->errors()], 422);
+        }
+
+        $order->update(['status' => $request->status]);
+
+        // ✅ FIX: Load orderItems with products
+        $order->load(['user', 'orderItems.product']);
+
+        return response()->json([
+            'message' => 'Order status updated successfully', 
+            'order' => $order
+        ], 200);
+    }
 
     /**
      * Cancel order by user if still in processing phase.
@@ -269,11 +229,21 @@ public function show(Order $order)
 
     /**
      * Get orders for the logged-in user.
+     * ✅ FIXED: Load orderItems.product
      */
     public function getUserOrders()
     {
-        $orders = Order::where('user_id', auth()->id())->latest()->get();
+        $user = auth()->user();
 
-        return response()->json(['orders' => $orders], 200);
+        if (!$user) {
+            return response()->json(['error' => 'Unauthenticated'], 401);
+        }
+
+        $orders = Order::where('user_id', auth()->id())
+            ->with(['user', 'orderItems.product'])
+            ->latest()
+            ->get();
+
+        return response()->json(['data' => $orders, 'orders' => $orders], 200);
     }
 }
