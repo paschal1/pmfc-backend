@@ -65,6 +65,11 @@ Route::get('/quotes/{id}', [QuoteController::class, 'show']);
 Route::delete('/quotes/{id}', [QuoteController::class, 'destroy']); 
 
 // Contact Routes (public + auth)
+Route::get('contacts/pending-count', [ContactController::class, 'getPendingCount']);
+    
+    // Get statistics
+Route::get('contacts/stats', [ContactController::class, 'getStats']);
+
 Route::get('contacts', [ContactController::class, 'index']);
 Route::post('contacts', [ContactController::class, 'store']);
 Route::put('contacts/{id}/status', [ContactController::class, 'update']);
