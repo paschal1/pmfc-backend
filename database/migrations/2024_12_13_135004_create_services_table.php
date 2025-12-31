@@ -15,9 +15,17 @@ return new class extends Migration
             $table->id();
             $table->string('title');
             $table->text('description');
+            $table->enum('type', [
+                'Residential Design',
+                'Hospitality Design',
+                'Office Design',
+                'Commercial Design'
+            ])->default('Residential Design');
             $table->string('image1')->nullable();
             $table->string('image2')->nullable();
             $table->decimal('price', 10, 2)->nullable();
+            $table->decimal('min_price', 10, 2)->nullable();
+            $table->decimal('max_price', 10, 2)->nullable();
             $table->timestamps();
         });
     }
