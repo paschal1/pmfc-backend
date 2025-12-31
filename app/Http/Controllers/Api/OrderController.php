@@ -41,94 +41,185 @@ class OrderController extends Controller
     /**
      * Display the specified order.
      */
-   public function show($id)
-{
-    $user = auth()->user();
+    public function show($id)
+    {
+        $user = auth()->user();
 
-    if (!$user) {
-        return response()->json(['error' => 'Unauthenticated'], 401);
-    }
-
-    try {
-        // Find the order by ID
-        $order = Order::findOrFail($id);
-        
-        // Check authorization
-        if (!$user->hasRole('admin') && $order->user_id !== $user->id) {
-            return response()->json(['error' => 'Unauthorized'], 403);
+        if (!$user) {
+            return response()->json(['error' => 'Unauthenticated'], 401);
         }
 
-        // Load relationships
-        $order->load(['user', 'orderItems.product']);
-        
-        return response()->json($order);
+        try {
+            // Find the order by ID
+            $order = Order::findOrFail($id);
+            
+            // Check authorization
+            if (!$user->hasRole('admin') && $order->user_id !== $user->id) {
+                return response()->json(['error' => 'Unauthorized'], 403);
+            }
 
-    } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
-        return response()->json(['error' => 'Order not found'], 404);
-    } catch (\Exception $e) {
-        return response()->json([
-            'error' => 'Failed to fetch order',
-            'message' => $e->getMessage()
-        ], 500);
+            // Load relationships
+            $order->load(['user', 'orderItems.product']);
+            
+            return response()->json($order);
+
+        } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
+            return response()->json(['error' => 'Order not found'], 404);
+        } catch (\Exception $e) {
+            return response()->json([
+                'error' => 'Failed to fetch order',
+                'message' => $e->getMessage()
+            ], 500);
+        }
     }
-}
 
     /**
      * Place a new order from cart items.
+     * 
+     * ENHANCED VERSION WITH BETTER ERROR HANDLING
      */
     public function placeOrder(Request $request)
     {
-        $userId = auth()->id();
-        $cartItems = CartItem::where('user_id', $userId)->with('product')->get();
-
-        if ($cartItems->isEmpty()) {
-            return response()->json(['message' => 'Your cart is empty'], 400);
-        }
-
-        DB::beginTransaction();
-
         try {
-            $totalPrice = $cartItems->reduce(function ($carry, $item) {
-                return $carry + ($item->product->price * $item->quantity);
-            }, 0);
-
-            $order = Order::create([
-                'user_id' => $userId,
-                'total_price' => $totalPrice,
-                'tracking_number' => strtoupper(Str::random(12)),
-                'status' => 'order_processing',
-                'order_date' => now(),
-                'shipping_address' => $request->input('shipping_address', 'Not provided'),
-                'shipping_state' => $request->input('shipping_state'),
-                'shipping_city' => $request->input('shipping_city'),
-                'shipping_zip_code' => $request->input('shipping_zip_code'),
-                'fullname' => $request->input('fullname'),
-                'email' => $request->input('email'),
-                'payment_method' => $request->input('payment_method', 'Bank Transfer'),
-                'payment_type' => $request->input('payment_type', 'Full Payment'),
-                'payment_status' => 'Unpaid',
-            ]);
-
-            foreach ($cartItems as $item) {
-                OrderItem::create([
-                    'order_id' => $order->id,
-                    'product_id' => $item->product_id,
-                    'product_name' => $item->product->name,
-                    'price' => $item->product->price,
-                    'quantity' => $item->quantity,
-                    'subtotal' => $item->product->price * $item->quantity,
-                ]);
+            // Step 1: Validate user is authenticated
+            $user = auth()->user();
+            if (!$user) {
+                return response()->json(['error' => 'Unauthenticated'], 401);
             }
 
-            CartItem::where('user_id', $userId)->delete();
+            $userId = $user->id;
 
-            DB::commit();
+            // Step 2: Validate request data
+            $validator = Validator::make($request->all(), [
+                'fullname' => 'required|string|max:255',
+                'email' => 'required|email',
+                'shipping_address' => 'required|string',
+                'shipping_city' => 'required|string',
+                'shipping_state' => 'required|string',
+                'shipping_zip_code' => 'nullable|string',
+                'payment_method' => 'required|string|in:Bank Transfer,Credit Card,PayPal',
+                'payment_type' => 'required|string|in:Full Payment,Deposit',
+            ]);
 
-            return response()->json(['message' => 'Order placed successfully', 'order' => $order], 201);
+            if ($validator->fails()) {
+                return response()->json([
+                    'error' => 'Validation failed',
+                    'errors' => $validator->errors()
+                ], 422);
+            }
+
+            // Step 3: Get cart items with product data
+            $cartItems = CartItem::where('user_id', $userId)
+                ->with('product')
+                ->get();
+
+            if ($cartItems->isEmpty()) {
+                return response()->json(['error' => 'Your cart is empty'], 400);
+            }
+
+            // Step 4: Verify all products exist
+            foreach ($cartItems as $item) {
+                if (!$item->product) {
+                    return response()->json([
+                        'error' => 'Product not found',
+                        'cart_item_id' => $item->id,
+                        'product_id' => $item->product_id
+                    ], 400);
+                }
+
+                // Verify product has a price
+                if (!$item->product->price) {
+                    return response()->json([
+                        'error' => 'Product has no price',
+                        'product_id' => $item->product_id,
+                        'product_name' => $item->product->name
+                    ], 400);
+                }
+            }
+
+            // Step 5: Start database transaction
+            DB::beginTransaction();
+
+            try {
+                // Step 6: Calculate total price
+                $totalPrice = 0;
+                foreach ($cartItems as $item) {
+                    $itemPrice = floatval($item->product->price);
+                    $itemQuantity = intval($item->quantity);
+                    $totalPrice += ($itemPrice * $itemQuantity);
+                }
+
+                // Step 7: Create order
+                $order = Order::create([
+                    'user_id' => $userId,
+                    'total_price' => $totalPrice,
+                    'tracking_number' => strtoupper(Str::random(12)),
+                    'status' => 'order_processing',
+                    'order_date' => now(),
+                    'shipping_address' => $request->input('shipping_address'),
+                    'shipping_state' => $request->input('shipping_state'),
+                    'shipping_city' => $request->input('shipping_city'),
+                    'shipping_zip_code' => $request->input('shipping_zip_code', null),
+                    'fullname' => $request->input('fullname'),
+                    'email' => $request->input('email'),
+                    'payment_method' => $request->input('payment_method', 'Bank Transfer'),
+                    'payment_type' => $request->input('payment_type', 'Full Payment'),
+                    'payment_status' => 'Unpaid',
+                ]);
+
+                // Step 8: Create order items
+                foreach ($cartItems as $item) {
+                    $itemPrice = floatval($item->product->price);
+                    $quantity = intval($item->quantity);
+                    $subtotal = $itemPrice * $quantity;
+
+                    OrderItem::create([
+                        'order_id' => $order->id,
+                        'product_id' => $item->product_id,
+                        'product_name' => $item->product->name,
+                        'price' => $itemPrice,
+                        'quantity' => $quantity,
+                        'subtotal' => $subtotal,
+                    ]);
+                }
+
+                // Step 9: Clear cart items
+                CartItem::where('user_id', $userId)->delete();
+
+                // Step 10: Commit transaction
+                DB::commit();
+
+                // Step 11: Return success response
+                return response()->json([
+                    'message' => 'Order placed successfully',
+                    'order' => [
+                        'id' => $order->id,
+                        'tracking_number' => $order->tracking_number,
+                        'total_price' => $order->total_price,
+                        'status' => $order->status,
+                        'payment_status' => $order->payment_status,
+                    ]
+                ], 201);
+
+            } catch (\Exception $transactionError) {
+                // Rollback if anything fails
+                DB::rollBack();
+                
+                return response()->json([
+                    'error' => 'Failed to create order',
+                    'message' => $transactionError->getMessage(),
+                    'line' => $transactionError->getLine(),
+                    'file' => str_replace(base_path(), '', $transactionError->getFile()),
+                ], 500);
+            }
 
         } catch (\Exception $e) {
-            DB::rollBack();
-            return response()->json(['message' => 'Failed to place order', 'error' => $e->getMessage()], 500);
+            return response()->json([
+                'error' => 'Order processing error',
+                'message' => $e->getMessage(),
+                'line' => $e->getLine(),
+                'file' => str_replace(base_path(), '', $e->getFile()),
+            ], 500);
         }
     }
 
@@ -231,11 +322,6 @@ class OrderController extends Controller
 
     /**
      * Get orders for the logged-in user.
-     * 
-     * ✅ THIS IS THE CRITICAL FIX
-     * - Route must be: Route::get('/orders/user', ...)
-     * - Must come BEFORE Route::get('/orders/{order}', ...)
-     * - Uses manual query, NOT route model binding
      */
     public function getUserOrders()
     {
