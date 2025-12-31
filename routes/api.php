@@ -54,9 +54,8 @@ Route::apiResource('wishlist', WishlistController::class)->only(['index', 'show'
 Route::apiResource('ratings', RatingController::class)->only(['index', 'show']);
 Route::apiResource('training-programs', TrainingController::class)->only(['index', 'show']);
 
-
-Route::get('/quotes', [QuoteController::class, 'index']);         // GET all quotes
-Route::get('/quotes/{id}', [QuoteController::class, 'show']);     // GET one quote
+Route::get('/quotes', [QuoteController::class, 'index']);
+Route::get('/quotes/{id}', [QuoteController::class, 'show']);
 Route::delete('/quotes/{id}', [QuoteController::class, 'destroy']); 
 
 // Contact Routes (public + auth)
@@ -72,10 +71,9 @@ Route::post('/students', [StudentController::class, 'store']);
 
 Route::middleware(['auth:sanctum'])->group(function () {
 
+    // Location costs
+    Route::apiResource('location-costs', LocationCostController::class);
     
-
-     //location costs
-        Route::apiResource('location-costs', LocationCostController::class);
     // User Profile and Dashboard
     Route::get('/user', fn(Request $request) => $request->user());
     Route::get('/activeUse', [UserController::class, 'activeUse'])->name('activeUser');
@@ -85,6 +83,7 @@ Route::middleware(['auth:sanctum'])->group(function () {
     Route::get('/update-profile', [UserController::class, 'updateProfile']);
     Route::patch('/update-profile', [UserController::class, 'update']);
     Route::post('/change-password', [UserController::class, 'changePassword']);
+    
     //////////////////////////////////////////////////////////
     // Admin Routes
     //////////////////////////////////////////////////////////
@@ -95,15 +94,10 @@ Route::middleware(['auth:sanctum'])->group(function () {
         Route::apiResource('students', StudentController::class)->except(['index', 'show']);
 
         // Analytics Routes
-        // Route::get('/analytics/sales-reports', [AnalyticsDashboardController::class, 'salesReports']);
-        // Route::get('/analytics/user-activity', [AnalyticsDashboardController::class, 'userActivity']);
-        // Route::get('/analytics/website-performance', [AnalyticsDashboardController::class, 'websitePerformance']);
-
-    Route::get('/analytics/dashboard-summary', [AnalyticsDashboardController::class, 'dashboardSummary']);
-    Route::get('/analytics/sales-reports', [AnalyticsDashboardController::class, 'salesReports']);
-    Route::get('/analytics/user-activity', [AnalyticsDashboardController::class, 'userActivity']);
-    Route::get('/analytics/website-performance', [AnalyticsDashboardController::class, 'websitePerformance']);
-
+        Route::get('/analytics/dashboard-summary', [AnalyticsDashboardController::class, 'dashboardSummary']);
+        Route::get('/analytics/sales-reports', [AnalyticsDashboardController::class, 'salesReports']);
+        Route::get('/analytics/user-activity', [AnalyticsDashboardController::class, 'userActivity']);
+        Route::get('/analytics/website-performance', [AnalyticsDashboardController::class, 'websitePerformance']);
        
         // Permission and Role Routes
         Route::prefix('permissions')->group(function () {
@@ -131,10 +125,8 @@ Route::middleware(['auth:sanctum'])->group(function () {
     });
 
     //////////////////////////////////////////////////////////
-    // Other Common Routes
-    //////////////////////////////////////////////////////////
-     Route::get('/orders/user', [OrderController::class, 'getUserOrders']);
     // Cart Routes
+    //////////////////////////////////////////////////////////
     Route::apiResource('cartItems', CartItemController::class);
     Route::get('cart', [CartController::class, 'viewCart']);
     Route::post('cart/{cartId}/items', [CartController::class, 'addItemToCart']);
@@ -143,15 +135,18 @@ Route::middleware(['auth:sanctum'])->group(function () {
     Route::post('cart/{cartId}/checkout', [CartController::class, 'checkout']);
     Route::get('carts', [CartController::class, 'viewAllCarts']);
 
+    //////////////////////////////////////////////////////////
     // Enrollment Routes
+    //////////////////////////////////////////////////////////
     Route::get('/enrollments', [EnrollmentController::class, 'index']);
-       Route::get('/enrollments/{id}', [EnrollmentController::class, 'show']);
+    Route::get('/enrollments/{id}', [EnrollmentController::class, 'show']);
     Route::post('/enroll', [EnrollmentController::class, 'enroll']);
- 
     Route::delete('/enrollments/{id}', [EnrollmentController::class, 'destroy']);
     Route::post('/unenroll', [TrainingController::class, 'unenroll']);
 
-    // Full CRUD resources under auth
+    //////////////////////////////////////////////////////////
+    // Full CRUD Resources Under Auth
+    //////////////////////////////////////////////////////////
     Route::apiResource('categories', CategoryController::class)->except(['index', 'show']);
     Route::apiResource('blogs', BlogController::class)->except(['index', 'show']);
     Route::apiResource('projects', ProjectController::class)->except(['index', 'show']);
@@ -160,32 +155,37 @@ Route::middleware(['auth:sanctum'])->group(function () {
     Route::apiResource('wishlist', WishlistController::class)->except(['index', 'show']);
     Route::apiResource('ratings', RatingController::class)->except(['index', 'show']);
 
+    //////////////////////////////////////////////////////////
     // Quote and Payment Routes
+    //////////////////////////////////////////////////////////
     Route::post('quotes', [QuoteController::class, 'store']);
     Route::post('/pay', [PaymentController::class, 'redirectToGateway'])->name('payment.redirect');
     Route::get('/payment/callback', [PaymentController::class, 'handleGatewayCallback'])->name('payment.callback');
 
-    // Order Routes
-     
+    //////////////////////////////////////////////////////////
+    // ORDER ROUTES - CRITICAL: Specific routes MUST come before generic ones
+    //////////////////////////////////////////////////////////
+    
+    // ⚠️ IMPORTANT: Place specific order routes BEFORE the generic {id} route
+    
+    // Specific order routes (must be first)
+    Route::get('/orders/user', [OrderController::class, 'getUserOrders']);
+    Route::get('/orders/track/{trackingNumber}', [OrderController::class, 'trackOrder']);
     
     // General order routes (come after specific routes)
     Route::get('/orders', [OrderController::class, 'index']);
     Route::post('/orders', [OrderController::class, 'placeOrder']);
-    Route::get('/orders/{id}', [OrderController::class, 'show'])->where('order', '[0-9]+');  // NOW this won't match /user
+    Route::get('/orders/{id}', [OrderController::class, 'show'])->where('id', '[0-9]+');
     
-    // Order management
+    // Order management routes
     Route::put('/orders/{id}/status', [OrderController::class, 'updateStatus']);
     Route::post('/orders/{orderId}/cancel', [OrderController::class, 'cancelOrder']);
     Route::post('/orders/{id}/refund', [OrderController::class, 'issueRefund']);
-
-    
-    // Route::post('/orders/{orderId}/cancel', [OrderController::class, 'cancelOrder']);
-    // Route::put('/orders/{id}/status', [OrderController::class, 'updateStatus']); 
-    // Route::get('/orders/track/{trackingNumber}', [OrderController::class, 'trackOrder']);
-    // Route::post('/orders/{id}/refund', [OrderController::class, 'issueRefund']);
-    // Route::get('/orders/user', [OrderController::class, 'getUserOrders']);
 });
 
+//////////////////////////////////////////////////////////////
+// Test Routes (Remove in production)
+//////////////////////////////////////////////////////////////
 Route::get('/test-password', function () {
     $user = \App\Models\User::where('email', 'info@princem-fc.com')->first();
     
