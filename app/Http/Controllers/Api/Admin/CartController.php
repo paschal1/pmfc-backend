@@ -61,64 +61,93 @@ class CartController extends Controller
 
 public function addItemToCart(Request $request, $cartId)
 {
+    // Validate input
     $validated = $request->validate([
         'product_id' => 'required|exists:products,id',
         'quantity'   => 'required|integer|min:1',
     ]);
 
-    $cart = Cart::findOrFail($cartId);
+    try {
+        // Find the cart
+        $cart = Cart::findOrFail($cartId);
 
-    // 🔐 Always get price from DB
-    $product = Product::findOrFail($validated['product_id']);
-
-    // Optional: stock check
-    if ($product->stock < $validated['quantity']) {
-        return response()->json([
-            'message' => 'Insufficient stock',
-            'available_stock' => $product->stock
-        ], 400);
-    }
-
-    // Check if item already exists in cart
-    $existingItem = CartItem::where('cart_id', $cart->id)
-        ->where('product_id', $product->id)
-        ->first();
-
-    if ($existingItem) {
-        $newQuantity = $existingItem->quantity + $validated['quantity'];
-
-        if ($product->stock < $newQuantity) {
+        // Security: Ensure the cart belongs to the authenticated user
+        if ($cart->user_id !== auth()->id()) {
             return response()->json([
-                'message' => 'Cannot add more items. Insufficient stock',
+                'message' => 'Unauthorized: This cart does not belong to you.'
+            ], 403);
+        }
+
+        // Get product from database (to ensure correct price and stock)
+        $product = Product::findOrFail($validated['product_id']);
+
+        // Stock check
+        if ($product->stock < $validated['quantity']) {
+            return response()->json([
+                'message'         => 'Insufficient stock',
                 'available_stock' => $product->stock
             ], 400);
         }
 
-        $existingItem->update([
-            'quantity'  => $newQuantity,
-            'price'     => $product->price,
-            'sub_total' => $newQuantity * $product->price,
-        ]);
+        // Check if the item already exists in the cart
+        $existingItem = CartItem::where('cart_id', $cart->id)
+            ->where('product_id', $product->id)
+            ->first();
 
-        $cartItem = $existingItem;
-    } else {
-        $cartItem = CartItem::create([
-            'cart_id'   => $cart->id,
-            'product_id'=> $product->id,
-            'quantity'  => $validated['quantity'],
-            'price'     => $product->price,
-            'sub_total' => $validated['quantity'] * $product->price,
-        ]);
+        if ($existingItem) {
+            $newQuantity = $existingItem->quantity + $validated['quantity'];
+
+            // Check stock again after adding
+            if ($product->stock < $newQuantity) {
+                return response()->json([
+                    'message'         => 'Cannot add more items. Insufficient stock',
+                    'available_stock' => $product->stock
+                ], 400);
+            }
+
+            // Update existing item
+            $existingItem->update([
+                'quantity'  => $newQuantity,
+                'price'     => $product->price,
+                'sub_total' => $newQuantity * $product->price,
+            ]);
+
+            $cartItem = $existingItem->fresh(); // Reload to get updated values
+        } else {
+            // Create new cart item with user_id (critical fix)
+            $cartItem = CartItem::create([
+                'cart_id'    => $cart->id,
+                'user_id'    => $cart->user_id,         // ← Fixes "user_id no default value"
+                'product_id' => $product->id,
+                'quantity'   => $validated['quantity'],
+                'price'      => $product->price,
+                'sub_total'  => $validated['quantity'] * $product->price,
+            ]);
+        }
+
+        // Recalculate cart total
+        $cart->calculateTotal();
+
+        // Return success response
+        return response()->json([
+            'message'    => 'Item added to cart successfully',
+            'cart_item'  => $cartItem->load('product'),
+            'cart_total' => $cart->total
+        ], 201);
+
+    } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
+        return response()->json([
+            'message' => 'Cart or Product not found'
+        ], 404);
+    } catch (\Exception $e) {
+        // Log the error in production (optional)
+        \Log::error('Add to cart failed: ' . $e->getMessage());
+
+        return response()->json([
+            'message' => 'Failed to add item to cart',
+            'error'   => $e->getMessage() // Remove in production
+        ], 500);
     }
-
-    // 🔄 Recalculate cart total
-    $cart->calculateTotal();
-
-    return response()->json([
-        'message'   => 'Item added to cart',
-        'cart_item' => $cartItem->load('product'),
-        'cart_total'=> $cart->total
-    ], 201);
 }
 
 public function updateItemQuantity(Request $request, $cartId, $itemId)
