@@ -41,21 +41,83 @@ class CartController extends Controller
     
 
 
+// public function addItemToCart(Request $request, $cartId)
+// {
+//     $cart = Cart::findOrFail($cartId);
+
+//     $cartItem = CartItem::create([
+//         'cart_id' => $cart->id,
+//         'product_id' => $request->product_id,
+//         'quantity' => $request->quantity,
+//         'price' => $request->price,
+//         'sub_total' => $request->quantity * $request->price,
+//     ]);
+
+//     $cart->calculateTotal();
+
+//     return response()->json($cartItem, 201);
+// }
+
 public function addItemToCart(Request $request, $cartId)
 {
-    $cart = Cart::findOrFail($cartId);
-
-    $cartItem = CartItem::create([
-        'cart_id' => $cart->id,
-        'product_id' => $request->product_id,
-        'quantity' => $request->quantity,
-        'price' => $request->price,
-        'sub_total' => $request->quantity * $request->price,
+    $validated = $request->validate([
+        'product_id' => 'required|exists:products,id',
+        'quantity'   => 'required|integer|min:1',
     ]);
 
+    $cart = Cart::findOrFail($cartId);
+
+    // 🔐 Always get price from DB
+    $product = Product::findOrFail($validated['product_id']);
+
+    // Optional: stock check
+    if ($product->stock < $validated['quantity']) {
+        return response()->json([
+            'message' => 'Insufficient stock',
+            'available_stock' => $product->stock
+        ], 400);
+    }
+
+    // Check if item already exists in cart
+    $existingItem = CartItem::where('cart_id', $cart->id)
+        ->where('product_id', $product->id)
+        ->first();
+
+    if ($existingItem) {
+        $newQuantity = $existingItem->quantity + $validated['quantity'];
+
+        if ($product->stock < $newQuantity) {
+            return response()->json([
+                'message' => 'Cannot add more items. Insufficient stock',
+                'available_stock' => $product->stock
+            ], 400);
+        }
+
+        $existingItem->update([
+            'quantity'  => $newQuantity,
+            'price'     => $product->price,
+            'sub_total' => $newQuantity * $product->price,
+        ]);
+
+        $cartItem = $existingItem;
+    } else {
+        $cartItem = CartItem::create([
+            'cart_id'   => $cart->id,
+            'product_id'=> $product->id,
+            'quantity'  => $validated['quantity'],
+            'price'     => $product->price,
+            'sub_total' => $validated['quantity'] * $product->price,
+        ]);
+    }
+
+    // 🔄 Recalculate cart total
     $cart->calculateTotal();
 
-    return response()->json($cartItem, 201);
+    return response()->json([
+        'message'   => 'Item added to cart',
+        'cart_item' => $cartItem->load('product'),
+        'cart_total'=> $cart->total
+    ], 201);
 }
 
 public function updateItemQuantity(Request $request, $cartId, $itemId)
