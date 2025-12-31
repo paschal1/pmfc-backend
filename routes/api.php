@@ -73,6 +73,8 @@ Route::get('contacts/stats', [ContactController::class, 'getStats']);
 Route::get('contacts', [ContactController::class, 'index']);
 Route::post('contacts', [ContactController::class, 'store']);
 
+Route::post('contacts/{id}/reply', [ContactController::class, 'sendReply']);
+
 Route::put('contacts/{id}/status', [ContactController::class, 'update']);
 
 // Get single contact - MUST come after specific routes

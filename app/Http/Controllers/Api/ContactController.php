@@ -7,6 +7,7 @@ use Illuminate\Http\Request;
 use App\Models\Contact;
 use App\Mail\ContactMail;
 use App\Mail\ContactAdminMail;
+use App\Mail\ContactReplyMail;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\URL;
 use Illuminate\Support\Facades\Validator;
@@ -90,7 +91,7 @@ class ContactController extends Controller
         $contactDetails = Contact::create([
             'name' => $request->name,
             'email' => $request->email,
-            'message' => $request->message, // Fixed the typo from 'mesaage' to 'message'
+            'message' => $request->message,
             'phone' => $request->phone,
             'status' => 'pending', // Set initial status to pending
         ]);
@@ -135,6 +136,61 @@ class ContactController extends Controller
         }
 
         return response()->json(['message' => 'Contact status updated successfully!']);
+    }
+
+    /**
+     * Send a reply to a contact message
+     * Sends email to user and copy to admin
+     * Updates contact status to 'responded'
+     */
+    public function sendReply(Request $request, string $id)
+    {
+        try {
+            $contact = Contact::findOrFail($id);
+
+            // Validate reply message
+            $validated = $request->validate([
+                'reply_message' => 'required|string|min:1',
+            ]);
+
+            $replyMessage = $request->input('reply_message');
+
+            // Prepare data for email
+            $replyData = [
+                'contact_name' => $contact->name,
+                'contact_email' => $contact->email,
+                'contact_phone' => $contact->phone,
+                'original_message' => $contact->message,
+                'reply_message' => $replyMessage,
+                'sent_at' => now()->format('M d, Y H:i A'),
+            ];
+
+            // Send reply email to user
+            Mail::to($contact->email)->send(new ContactReplyMail($replyData));
+
+            // Send copy of reply to admin
+            Mail::to('admin@pmfc.com')->send(new ContactReplyMail($replyData, isAdmin: true));
+
+            // Update contact status to responded
+            $contact->update(['status' => 'responded']);
+
+            return response()->json([
+                'message' => 'Reply sent successfully to ' . $contact->email,
+                'contact_id' => $contact->id,
+                'status' => 'responded',
+            ], 200);
+
+        } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
+            return response()->json([
+                'error' => 'Contact not found',
+                'message' => 'The contact you are trying to reply to does not exist'
+            ], 404);
+        } catch (\Exception $e) {
+            return response()->json([
+                'error' => 'Failed to send reply',
+                'message' => $e->getMessage()
+            ], 500);
+        }
     }
 
     /**
