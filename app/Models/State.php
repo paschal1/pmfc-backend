@@ -2,14 +2,17 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
 class State extends Model
 {
+    use HasFactory;
+
     protected $fillable = ['name'];
 
     /**
-     * Get the name of the state.
+     * Get the name of the state (capitalize first letter).
      *
      * @return string
      */
@@ -19,11 +22,18 @@ class State extends Model
     }
 
     /**
-     * Get the location costs associated with the state.
+     * Get the location cost associated with the state.
      */
     public function locationCost()
     {
         return $this->hasOne(LocationCost::class);
     }
-}
 
+    /**
+     * Get quotes for this state.
+     */
+    public function quotes()
+    {
+        return $this->hasMany(Quote::class);
+    }
+}

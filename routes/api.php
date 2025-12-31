@@ -28,6 +28,7 @@ use App\Http\Controllers\Api\ProjectController;
 use App\Http\Controllers\Api\QuoteController;
 use App\Http\Controllers\Api\PaymentController;
 use App\Http\Controllers\Api\Admin\RolePermissionController;
+ use App\Http\Controllers\Api\StateController;
 use App\Http\Controllers\Api\LocationCostController;
 use Spatie\Permission\Models\Role;
 
@@ -96,6 +97,8 @@ Route::middleware(['auth:sanctum'])->group(function () {
 
     // Location costs
     Route::apiResource('location-costs', LocationCostController::class);
+
+       Route::get('states', [StateController::class, 'index']);
     
     // User Profile and Dashboard
     Route::get('/user', fn(Request $request) => $request->user());
