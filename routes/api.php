@@ -72,7 +72,17 @@ Route::get('contacts/stats', [ContactController::class, 'getStats']);
 
 Route::get('contacts', [ContactController::class, 'index']);
 Route::post('contacts', [ContactController::class, 'store']);
+
 Route::put('contacts/{id}/status', [ContactController::class, 'update']);
+
+// Get single contact - MUST come after specific routes
+    Route::get('contacts/{id}', [ContactController::class, 'show']);
+    
+    // Update contact status
+    Route::put('contacts/{id}', [ContactController::class, 'update']);
+    
+    // Delete contact
+    Route::delete('contacts/{id}', [ContactController::class, 'destroy']);
 
 Route::post('/students', [StudentController::class, 'store']);
 
