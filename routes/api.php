@@ -43,7 +43,13 @@ Route::post('/login', [AuthController::class, 'login'])->name('api.user.login');
 
 // Public-facing GET routes (index + show)
 Route::apiResource('products', ProductController::class)->only(['index', 'show']);
-Route::apiResource('orders', OrderController::class)->only(['index', 'show']);
+
+// ⚠️ IMPORTANT: Do NOT use apiResource for orders in public routes
+// Because it will create /orders/{id} which conflicts with /orders/user
+// Instead, define them explicitly:
+Route::get('/orders', [OrderController::class, 'index'])->name('orders.index');
+// Note: We're NOT adding Route::get('/orders/{id}') here to avoid conflicts
+
 Route::apiResource('students', StudentController::class)->only(['index', 'show']);
 Route::apiResource('categories', CategoryController::class)->only(['index', 'show']);
 Route::apiResource('blogs', BlogController::class)->only(['index', 'show']);
@@ -90,7 +96,7 @@ Route::middleware(['auth:sanctum'])->group(function () {
     Route::middleware(['role:admin', 'log.activity'])->group(function () {
         // Admin-managed resources (except index/show because public)
         Route::apiResource('products', ProductController::class)->except(['index', 'show']);
-        Route::apiResource('orders', OrderController::class)->except(['index', 'show']);
+        // Note: Order routes are handled separately below
         Route::apiResource('students', StudentController::class)->except(['index', 'show']);
 
         // Analytics Routes
@@ -166,21 +172,24 @@ Route::middleware(['auth:sanctum'])->group(function () {
     // ORDER ROUTES - CRITICAL: Specific routes MUST come before generic ones
     //////////////////////////////////////////////////////////
     
-    // ⚠️ IMPORTANT: Place specific order routes BEFORE the generic {id} route
+    // ⚠️ IMPORTANT: Order matters! Specific routes BEFORE generic {id} routes
     
-    // Specific order routes (must be first)
-    Route::get('/orders/user', [OrderController::class, 'getUserOrders']);
-    Route::get('/orders/track/{trackingNumber}', [OrderController::class, 'trackOrder']);
+    // User-specific order routes (MUST BE FIRST)
+    Route::get('/orders/user', [OrderController::class, 'getUserOrders'])->name('orders.user');
+    Route::get('/orders/track/{trackingNumber}', [OrderController::class, 'trackOrder'])->name('orders.track');
     
-    // General order routes (come after specific routes)
-    Route::get('/orders', [OrderController::class, 'index']);
-    Route::post('/orders', [OrderController::class, 'placeOrder']);
-    Route::get('/orders/{id}', [OrderController::class, 'show'])->where('id', '[0-9]+');
+    // Standard order operations
+    Route::post('/orders', [OrderController::class, 'placeOrder'])->name('orders.store');
+    
+    // Generic ID route (MUST COME AFTER specific routes like /orders/user)
+    Route::get('/orders/{id}', [OrderController::class, 'show'])
+        ->where('id', '[0-9]+')
+        ->name('orders.show');
     
     // Order management routes
-    Route::put('/orders/{id}/status', [OrderController::class, 'updateStatus']);
-    Route::post('/orders/{orderId}/cancel', [OrderController::class, 'cancelOrder']);
-    Route::post('/orders/{id}/refund', [OrderController::class, 'issueRefund']);
+    Route::put('/orders/{id}/status', [OrderController::class, 'updateStatus'])->name('orders.update-status');
+    Route::post('/orders/{orderId}/cancel', [OrderController::class, 'cancelOrder'])->name('orders.cancel');
+    Route::post('/orders/{id}/refund', [OrderController::class, 'issueRefund'])->name('orders.refund');
 });
 
 //////////////////////////////////////////////////////////////
