@@ -30,6 +30,7 @@ use App\Http\Controllers\Api\PaymentController;
 use App\Http\Controllers\Api\Admin\RolePermissionController;
  use App\Http\Controllers\Api\StateController;
 use App\Http\Controllers\Api\LocationCostController;
+use App\Http\Controllers\Api\AccountController;
 use Spatie\Permission\Models\Role;
 
 //////////////////////////////////////////////////////////////
@@ -149,6 +150,18 @@ Route::middleware(['auth:sanctum'])->group(function () {
         Route::apiResource('training-programs', TrainingController::class)->except(['index', 'show']);
         Route::get('my-training', [TrainingController::class, 'index']);
     });
+
+    // Account Management Routes
+        Route::prefix('accounts')->group(function () {
+            Route::get('/', [AccountController::class, 'index'])->name('accounts.index');
+            Route::get('/active', [AccountController::class, 'getActiveAccounts'])->name('accounts.active');
+            Route::get('/type/{type}', [AccountController::class, 'getByType'])->name('accounts.byType');
+            Route::post('/', [AccountController::class, 'store'])->name('accounts.store');
+            Route::get('/{id}', [AccountController::class, 'show'])->name('accounts.show');
+            Route::put('/{id}', [AccountController::class, 'update'])->name('accounts.update');
+            Route::patch('/{id}/status', [AccountController::class, 'toggleStatus'])->name('accounts.toggleStatus');
+            Route::delete('/{id}', [AccountController::class, 'destroy'])->name('accounts.destroy');
+        });
 
     //////////////////////////////////////////////////////////
     // Cart Routes
