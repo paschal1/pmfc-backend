@@ -28,9 +28,9 @@ use App\Http\Controllers\Api\ProjectController;
 use App\Http\Controllers\Api\QuoteController;
 use App\Http\Controllers\Api\PaymentController;
 use App\Http\Controllers\Api\Admin\RolePermissionController;
- use App\Http\Controllers\Api\StateController;
+use App\Http\Controllers\Api\StateController;
 use App\Http\Controllers\Api\LocationCostController;
-use App\Http\Controllers\Api\AccountController;
+use App\Http\Controllers\Api\AccountController;  // ✅ ADD THIS IMPORT
 use Spatie\Permission\Models\Role;
 
 //////////////////////////////////////////////////////////////
@@ -68,27 +68,20 @@ Route::delete('/quotes/{id}', [QuoteController::class, 'destroy']);
 
 // Contact Routes (public + auth)
 Route::get('contacts/pending-count', [ContactController::class, 'getPendingCount']);
-    
-    // Get statistics
 Route::get('contacts/stats', [ContactController::class, 'getStats']);
-
 Route::get('contacts', [ContactController::class, 'index']);
 Route::post('contacts', [ContactController::class, 'store']);
-
 Route::post('contacts/{id}/reply', [ContactController::class, 'sendReply']);
-
 Route::put('contacts/{id}/status', [ContactController::class, 'update']);
-
-// Get single contact - MUST come after specific routes
-    Route::get('contacts/{id}', [ContactController::class, 'show']);
-    
-    // Update contact status
-    Route::put('contacts/{id}', [ContactController::class, 'update']);
-    
-    // Delete contact
-    Route::delete('contacts/{id}', [ContactController::class, 'destroy']);
+Route::get('contacts/{id}', [ContactController::class, 'show']);
+Route::put('contacts/{id}', [ContactController::class, 'update']);
+Route::delete('contacts/{id}', [ContactController::class, 'destroy']);
 
 Route::post('/students', [StudentController::class, 'store']);
+
+// ✅ PUBLIC ACCOUNT ROUTES - For displaying on checkout page
+Route::get('/accounts/active', [AccountController::class, 'getActiveAccounts'])->name('accounts.active');
+Route::get('/accounts/type/{type}', [AccountController::class, 'getByType'])->name('accounts.byType');
 
 //////////////////////////////////////////////////////////////
 // Authenticated Routes (With Sanctum Middleware)
@@ -99,7 +92,7 @@ Route::middleware(['auth:sanctum'])->group(function () {
     // Location costs
     Route::apiResource('location-costs', LocationCostController::class);
 
-       Route::get('states', [StateController::class, 'index']);
+    Route::get('states', [StateController::class, 'index']);
     
     // User Profile and Dashboard
     Route::get('/user', fn(Request $request) => $request->user());
@@ -117,7 +110,6 @@ Route::middleware(['auth:sanctum'])->group(function () {
     Route::middleware(['role:admin', 'log.activity'])->group(function () {
         // Admin-managed resources (except index/show because public)
         Route::apiResource('products', ProductController::class)->except(['index', 'show']);
-        // Note: Order routes are handled separately below
         Route::apiResource('students', StudentController::class)->except(['index', 'show']);
 
         // Analytics Routes
@@ -141,6 +133,16 @@ Route::middleware(['auth:sanctum'])->group(function () {
             Route::post('admin/permissions/create', [RoleController::class, 'createPermission']);
             Route::post('admin/create', [RoleController::class, 'createRole']);
         });
+
+        // ✅ ADMIN ACCOUNT MANAGEMENT ROUTES
+        Route::prefix('accounts')->group(function () {
+            Route::get('/', [AccountController::class, 'index'])->name('accounts.index');
+            Route::post('/', [AccountController::class, 'store'])->name('accounts.store');
+            Route::get('/{id}', [AccountController::class, 'show'])->name('accounts.show');
+            Route::put('/{id}', [AccountController::class, 'update'])->name('accounts.update');
+            Route::patch('/{id}/status', [AccountController::class, 'toggleStatus'])->name('accounts.toggleStatus');
+            Route::delete('/{id}', [AccountController::class, 'destroy'])->name('accounts.destroy');
+        });
     });
 
     //////////////////////////////////////////////////////////
@@ -150,18 +152,6 @@ Route::middleware(['auth:sanctum'])->group(function () {
         Route::apiResource('training-programs', TrainingController::class)->except(['index', 'show']);
         Route::get('my-training', [TrainingController::class, 'index']);
     });
-
-    // Account Management Routes
-        Route::prefix('accounts')->group(function () {
-            Route::get('/', [AccountController::class, 'index'])->name('accounts.index');
-            Route::get('/active', [AccountController::class, 'getActiveAccounts'])->name('accounts.active');
-            Route::get('/type/{type}', [AccountController::class, 'getByType'])->name('accounts.byType');
-            Route::post('/', [AccountController::class, 'store'])->name('accounts.store');
-            Route::get('/{id}', [AccountController::class, 'show'])->name('accounts.show');
-            Route::put('/{id}', [AccountController::class, 'update'])->name('accounts.update');
-            Route::patch('/{id}/status', [AccountController::class, 'toggleStatus'])->name('accounts.toggleStatus');
-            Route::delete('/{id}', [AccountController::class, 'destroy'])->name('accounts.destroy');
-        });
 
     //////////////////////////////////////////////////////////
     // Cart Routes
