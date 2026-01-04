@@ -13,6 +13,9 @@ class Enrollment extends Model
         'student_id',
         'training_program_id',
         'enrollment_date',
+        'payment_method',
+        'payment_reference',
+        'payment_status',
     ];
 
     public function student()

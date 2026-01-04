@@ -18,6 +18,9 @@ return new class extends Migration
             $table->unsignedBigInteger('training_program_id');
             $table->foreign('training_program_id')->references('id')->on('training_programs')->onDelete('cascade');
             $table->date('enrollment_date');
+            $table->string('payment_method')->default('Bank Transfer')->after('enrollment_date');
+            $table->string('payment_reference')->nullable()->after('payment_method');
+            $table->enum('payment_status', ['Pending', 'Paid', 'Failed'])->default('Pending')->after('payment_reference');
             $table->timestamps();
         });
     }

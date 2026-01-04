@@ -5,6 +5,9 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use App\Models\Student;
+use App\Models\Enrollment;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Storage;
 
 class StudentController extends Controller
 {
@@ -13,8 +16,8 @@ class StudentController extends Controller
      */
     public function index()
     {
-        $enrollment = Student::all();
-        return response()->json(['enrollment' => $enrollment], 200);
+        $students = Student::with('enrollments.trainingProgram')->get();
+        return response()->json(['students' => $students], 200);
     }
 
     /**
@@ -37,34 +40,70 @@ class StudentController extends Controller
             'goals' => 'nullable|string',
             'id_proof' => 'nullable|file|mimes:jpg,jpeg,png,pdf|max:2048',
             'resume' => 'nullable|file|mimes:pdf,doc,docx|max:2048',
+            'training_program_id' => 'required|exists:training_programs,id',
+            'payment_method' => 'required|in:Bank Transfer,Paystack',
+            'payment_reference' => 'nullable|string', // Paystack reference
+            'payment_status' => 'required|in:Pending,Paid',
         ]);
 
-        // if ($validator->fails()) {
-        //     return response()->json(['errors' => $validator->errors()], 422);
-        // }
+        DB::beginTransaction();
 
-        $idProofPath = $request->file('id_proof') ? $request->file('id_proof')->store('uploads/id_proofs') : null;
-        $resumePath = $request->file('resume') ? $request->file('resume')->store('uploads/resumes') : null;
+        try {
+            // Handle file uploads
+            $idProofPath = $request->file('id_proof') 
+                ? $request->file('id_proof')->store('uploads/id_proofs') 
+                : null;
+            $resumePath = $request->file('resume') 
+                ? $request->file('resume')->store('uploads/resumes') 
+                : null;
 
-        $Enrollment = Student::create([
-            'full_name' => $request->input('full_name'),
-            'age' => $request->input('age'),
-            'gender' => $request->input('gender'),
-            'contact_number' => $request->input('contact_number'),
-            'email' => $request->input('email'),
-            'address' => $request->input('address'),
-            'date_of_birth' => $request->input('date_of_birth'),
-            'emergency_contact' => $request->input('emergency_contact'),
-            'previous_experience' => $request->input('previous_experience'),
-            'joining_date' => $request->input('joining_date'),
-            'program_duration' => '1 year',
-            'current_skill_level' => $request->input('current_skill_level'),
-            'goals' => $request->input('goals'),
-            'id_proof' => $idProofPath,
-            'resume' => $resumePath,
-        ]);
+            // Create student
+            $student = Student::create([
+                'full_name' => $request->input('full_name'),
+                'age' => $request->input('age'),
+                'gender' => $request->input('gender'),
+                'contact_number' => $request->input('contact_number'),
+                'email' => $request->input('email'),
+                'address' => $request->input('address'),
+                'date_of_birth' => $request->input('date_of_birth'),
+                'emergency_contact' => $request->input('emergency_contact'),
+                'previous_experience' => $request->input('previous_experience'),
+                'joining_date' => $request->input('joining_date'),
+                'program_duration' => '1 year',
+                'current_skill_level' => $request->input('current_skill_level'),
+                'goals' => $request->input('goals'),
+                'id_proof' => $idProofPath,
+                'resume' => $resumePath,
+            ]);
 
-        return response()->json(['message' => 'Your have successfully Enrolled.', 'Enrollment' => $Enrollment], 201);
+            // Create enrollment
+            $enrollment = Enrollment::create([
+                'student_id' => $student->id,
+                'training_program_id' => $request->input('training_program_id'),
+                'enrollment_date' => $request->input('joining_date'),
+                'payment_method' => $request->input('payment_method'),
+                'payment_reference' => $request->input('payment_reference'),
+                'payment_status' => $request->input('payment_status'),
+            ]);
+
+            // Load relationships
+            $enrollment->load('trainingProgram');
+
+            DB::commit();
+
+            return response()->json([
+                'message' => 'Enrollment submitted successfully!',
+                'student' => $student,
+                'enrollment' => $enrollment,
+            ], 201);
+
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return response()->json([
+                'message' => 'Enrollment failed',
+                'error' => $e->getMessage()
+            ], 500);
+        }
     }
 
     /**
@@ -72,13 +111,13 @@ class StudentController extends Controller
      */
     public function show(string $id)
     {
-        $Enrollment = Student::find($id);
+        $student = Student::with('enrollments.trainingProgram')->find($id);
 
-        if (!$Enrollment) {
-            return response()->json(['message' => 'Enrollment not found'], 404);
+        if (!$student) {
+            return response()->json(['message' => 'Student not found'], 404);
         }
 
-        return response()->json(['Enrollment' => $Enrollment], 200);
+        return response()->json(['student' => $student], 200);
     }
 
     /**
@@ -103,20 +142,19 @@ class StudentController extends Controller
             'resume' => 'nullable|file|mimes:pdf,doc,docx|max:2048',
         ]);
     
-        // Find the student record by ID
         $student = Student::findOrFail($id);
     
-        // Handle file uploads, only replacing if new files are uploaded
+        // Handle file uploads
         if ($request->hasFile('id_proof')) {
             if ($student->id_proof) {
-                Storage::delete($student->id_proof); // Delete the old file
+                Storage::delete($student->id_proof);
             }
             $student->id_proof = $request->file('id_proof')->store('uploads/id_proofs');
         }
     
         if ($request->hasFile('resume')) {
             if ($student->resume) {
-                Storage::delete($student->resume); // Delete the old file
+                Storage::delete($student->resume);
             }
             $student->resume = $request->file('resume')->store('uploads/resumes');
         }
@@ -139,21 +177,20 @@ class StudentController extends Controller
     
         return response()->json(['message' => 'Student details updated successfully.', 'student' => $student], 200);
     }
-    
 
     /**
      * Remove the specified resource from storage.
      */
     public function destroy(string $id)
     {
-        $Enrollment = Student::find($id);
+        $student = Student::find($id);
 
-        if (!$Enrollment) {
-            return response()->json(['message' => 'Enrollment not found'], 404);
+        if (!$student) {
+            return response()->json(['message' => 'Student not found'], 404);
         }
 
-        $Enrollment->delete();
+        $student->delete();
 
-        return response()->json(['message' => 'Trainee deleted successfully'], 200);
+        return response()->json(['message' => 'Student deleted successfully'], 200);
     }
 }
