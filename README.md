@@ -1,3 +1,91 @@
+# PMFC — Furniture E-commerce Backend
+
+The backend API for a furniture e-commerce platform built for PrinceM Furnishing Concept (PMFC).
+
+## Overview
+
+This repository contains the server-side application for the PMFC furniture commerce platform. It is intended to work alongside the separate Next.js frontend.
+
+**Frontend repository:** [pmfc-frontend](https://github.com/paschal1/pmfc-frontend)
+
+## Technology Stack
+
+- PHP
+- Laravel
+- REST API architecture
+- Database: document the database actually configured in the project
+
+## Responsibilities
+
+Document the backend capabilities implemented in this version, which may include:
+
+- Furniture product and category management
+- Product details and inventory information
+- Customer and account management
+- Shopping cart and order processing
+- Administrative operations
+- API validation and error handling
+
+## Getting Started
+
+### Prerequisites
+
+- PHP compatible with the Laravel version used
+- Composer
+- The configured database engine
+
+### Installation
+
+```bash
+git clone https://github.com/paschal1/pmfc-backend.git
+cd pmfc-backend
+composer install
+```
+
+Set up the local environment:
+
+```bash
+cp .env.example .env
+php artisan key:generate
+```
+
+Configure the database and required environment variables in `.env`.
+
+Run the database migrations if they are provided:
+
+```bash
+php artisan migrate
+```
+
+Start the API locally:
+
+```bash
+php artisan serve
+```
+
+## Frontend Integration
+
+The frontend is maintained separately:
+
+[PMFC Frontend Repository](https://github.com/paschal1/pmfc-frontend)
+
+Document the API base URL, authentication requirements, and available endpoints here once they have been verified against the actual routes and controllers.
+
+## API Documentation
+
+Add a link to Swagger, Postman documentation, or an API reference if one is available.
+
+## Security
+
+- Keep secrets in environment variables.
+- Validate and authorize incoming requests.
+- Do not commit production credentials or customer data.
+
+## Author
+
+**Paschal Chikwado Nwokeocha**
+
+[GitHub Repository](https://github.com/paschal1/pmfc-backend)
 <p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo"></a></p>
 
 <p align="center">
